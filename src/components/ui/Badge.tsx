@@ -9,16 +9,16 @@ interface BadgeProps {
 
 export const Badge = ({ status, children, className }: BadgeProps) => {
   const styles = {
-    pending: 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20',
-    approved: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
-    rejected: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
-    default: 'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10',
+    pending: 'bg-amber-50/80 text-amber-700 ring-1 ring-inset ring-amber-600/20',
+    approved: 'bg-emerald-50/80 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
+    rejected: 'bg-rose-50/80 text-rose-700 ring-1 ring-inset ring-rose-600/20',
+    default: 'bg-slate-50/80 text-slate-600 ring-1 ring-inset ring-slate-500/10',
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-1 rounded-md text-xs font-medium",
+        "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]",
         styles[status],
         className
       )}

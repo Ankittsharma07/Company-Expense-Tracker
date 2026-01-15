@@ -16,18 +16,18 @@ interface StatCardProps {
 
 export const StatCard = ({ title, value, trend, icon, className }: StatCardProps) => {
   return (
-    <Card className={cn("group", className)}>
+      <Card className={cn("group", className)}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="p-2.5 bg-gray-50 rounded-lg text-gray-500 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors duration-300">
+          <div className="p-2.5 bg-white/80 rounded-xl text-slate-500 ring-1 ring-slate-200/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_8px_18px_rgba(15,23,42,0.08)] group-hover:bg-teal-50/80 group-hover:text-teal-700 transition-colors duration-300">
             {icon}
           </div>
           {trend && (
             <div className={cn(
-              "flex items-center text-xs font-medium px-2 py-1 rounded-full border",
+              "flex items-center text-xs font-medium px-2.5 py-1 rounded-full border",
               trend.isPositive 
-                ? "text-emerald-700 bg-emerald-50 border-emerald-100" 
-                : "text-red-700 bg-red-50 border-red-100"
+                ? "text-emerald-700 bg-emerald-50/80 border-emerald-100/80" 
+                : "text-rose-700 bg-rose-50/80 border-rose-100/80"
             )}>
               {trend.isPositive ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
               {Math.abs(trend.value)}%
@@ -35,8 +35,8 @@ export const StatCard = ({ title, value, trend, icon, className }: StatCardProps
           )}
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-          <h4 className="text-2xl font-bold text-gray-900 tracking-tight group-hover:text-indigo-900 transition-colors">{value}</h4>
+          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+          <h4 className="text-[28px] font-semibold text-slate-900 tracking-tight font-display group-hover:text-teal-700 transition-colors">{value}</h4>
         </div>
       </CardContent>
     </Card>

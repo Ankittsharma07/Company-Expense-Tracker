@@ -5,8 +5,10 @@ export const Card = ({ className, children, ...props }: React.HTMLAttributes<HTM
   return (
     <div
       className={cn(
-        "bg-white rounded-xl border border-gray-200/60 shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
-        "hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 ease-in-out",
+        "relative overflow-hidden bg-gradient-to-b from-white/95 via-white/90 to-slate-50/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 ring-1 ring-white/60 shadow-[0_14px_34px_rgba(15,23,42,0.1)]",
+        "before:content-[''] before:absolute before:inset-0 before:rounded-2xl before:bg-[radial-gradient(120%_120%_at_0%_0%,rgba(14,165,164,0.12),transparent_60%)] before:opacity-0 hover:before:opacity-100 before:transition-opacity before:pointer-events-none",
+        "after:content-[''] after:absolute after:inset-0 after:rounded-2xl after:ring-1 after:ring-white/70 after:pointer-events-none",
+        "hover:shadow-[0_20px_48px_rgba(15,23,42,0.14)] hover:-translate-y-0.5 transition-all duration-300 ease-out",
         className
       )}
       {...props}
@@ -17,13 +19,13 @@ export const Card = ({ className, children, ...props }: React.HTMLAttributes<HTM
 };
 
 export const CardHeader = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("px-6 py-5 border-b border-gray-100/80", className)} {...props}>
+  <div className={cn("px-6 py-5 border-b border-slate-100/80 bg-gradient-to-r from-white/80 to-slate-50/70 backdrop-blur-sm", className)} {...props}>
     {children}
   </div>
 );
 
 export const CardTitle = ({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 className={cn("text-base font-semibold text-gray-900 tracking-tight", className)} {...props}>
+  <h3 className={cn("text-base font-semibold text-slate-900 tracking-tight font-display", className)} {...props}>
     {children}
   </h3>
 );

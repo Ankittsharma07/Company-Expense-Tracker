@@ -12,11 +12,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, leftIcon, children, ...props }, ref) => {
     const variants = {
-      primary: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm hover:shadow-indigo-500/20 active:bg-indigo-800 border border-transparent',
-      secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-gray-900 shadow-sm',
-      outline: 'bg-transparent text-indigo-600 border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300',
-      ghost: 'bg-transparent text-gray-500 hover:bg-gray-100/80 hover:text-gray-900',
-      danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-red-500/20',
+      primary: 'bg-gradient-to-b from-teal-500 to-teal-700 text-white shadow-[0_16px_30px_rgba(13,148,136,0.35)] hover:from-teal-400 hover:to-teal-600 hover:shadow-[0_20px_36px_rgba(13,148,136,0.45)] active:to-teal-700 active:shadow-[0_12px_22px_rgba(13,148,136,0.3)] border border-teal-500/40',
+      secondary: 'bg-white/90 text-slate-700 border border-slate-200/80 hover:bg-white hover:text-slate-900 shadow-[0_10px_22px_rgba(15,23,42,0.08)] hover:shadow-[0_14px_28px_rgba(15,23,42,0.12)]',
+      outline: 'bg-transparent text-teal-700 border border-teal-200/70 hover:bg-teal-50/70 hover:border-teal-300/70 hover:shadow-[0_12px_22px_rgba(13,148,136,0.15)]',
+      ghost: 'bg-transparent text-slate-500 hover:bg-slate-100/70 hover:text-slate-900',
+      danger: 'bg-red-600 text-white hover:bg-red-700 shadow-[0_10px_20px_rgba(220,38,38,0.25)]',
     };
 
     const sizes = {
@@ -29,8 +29,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0',
+          'inline-flex items-center justify-center rounded-xl font-medium tracking-tight transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0',
+          'focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:ring-offset-0',
           'disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none',
           variants[variant],
           sizes[size],

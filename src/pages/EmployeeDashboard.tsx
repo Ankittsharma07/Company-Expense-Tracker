@@ -10,18 +10,18 @@ export const EmployeeDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Expenses</h1>
-          <p className="text-gray-500">Track and submit your business expenses.</p>
+          <h1 className="text-2xl font-semibold text-slate-900 font-display">My Expenses</h1>
+          <p className="text-slate-500">Track and submit your business expenses.</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
           New Expense
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
         <StatCard
           title="My Spending (YTD)"
           value="$3,450.00"
@@ -48,25 +48,25 @@ export const EmployeeDashboard = () => {
       >
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Client Lunch" />
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <input type="text" className="w-full px-3 py-2 border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 shadow-[0_6px_16px_rgba(15,23,42,0.06)]" placeholder="e.g. Client Lunch" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Amount</label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-gray-500">$</span>
-                <input type="number" className="w-full pl-7 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0.00" />
+                <span className="absolute left-3 top-2 text-slate-500">$</span>
+                <input type="number" className="w-full pl-7 px-3 py-2 border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 shadow-[0_6px_16px_rgba(15,23,42,0.06)]" placeholder="0.00" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-              <input type="date" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+              <input type="date" className="w-full px-3 py-2 border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 shadow-[0_6px_16px_rgba(15,23,42,0.06)]" />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <select className="w-full px-3 py-2 border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 shadow-[0_6px_16px_rgba(15,23,42,0.06)]">
               <option>Travel</option>
               <option>Meals</option>
               <option>Software</option>

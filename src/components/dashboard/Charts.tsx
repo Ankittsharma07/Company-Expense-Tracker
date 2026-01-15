@@ -9,7 +9,7 @@ export const SpendTrendChart = () => {
       className: 'echarts-tooltip',
       padding: 0,
       borderWidth: 0,
-      textStyle: { color: '#374151', fontSize: 12 },
+      textStyle: { color: '#1f2937', fontSize: 12 },
     },
     grid: {
       left: '2%',
@@ -25,7 +25,7 @@ export const SpendTrendChart = () => {
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: { 
-        color: '#9ca3af', 
+        color: '#94a3b8', 
         fontSize: 12,
         margin: 16 
       },
@@ -35,11 +35,11 @@ export const SpendTrendChart = () => {
       splitLine: { 
         lineStyle: { 
           type: 'dashed', 
-          color: '#f3f4f6' 
+          color: '#e2e8f0' 
         } 
       },
       axisLabel: { 
-        color: '#9ca3af',
+        color: '#94a3b8',
         fontSize: 12,
         formatter: (value: number) => `$${value/1000}k`
       },
@@ -50,14 +50,14 @@ export const SpendTrendChart = () => {
         type: 'line',
         smooth: 0.35,
         symbol: 'none', // clean look
-        lineStyle: { width: 3, color: '#4f46e5' },
+        lineStyle: { width: 3, color: '#0ea5a4' },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(79, 70, 229, 0.15)' },
-              { offset: 1, color: 'rgba(79, 70, 229, 0)' }
+              { offset: 0, color: 'rgba(14, 165, 164, 0.2)' },
+              { offset: 1, color: 'rgba(14, 165, 164, 0)' }
             ]
           }
         },
@@ -80,7 +80,7 @@ export const CategoryPieChart = () => {
       left: 'center',
       icon: 'circle',
       itemGap: 20,
-      textStyle: { color: '#6b7280' }
+      textStyle: { color: '#64748b' }
     },
     series: [
       {
@@ -100,7 +100,7 @@ export const CategoryPieChart = () => {
             show: true, 
             fontSize: 16, 
             fontWeight: 'bold',
-            color: '#111827'
+            color: '#0f172a'
           },
           scale: true,
           scaleSize: 5
@@ -108,7 +108,7 @@ export const CategoryPieChart = () => {
         data: CHART_DATA.categories.map((c, i) => ({
           value: c.value,
           name: c.name,
-          itemStyle: { color: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'][i] }
+          itemStyle: { color: ['#0ea5a4', '#38bdf8', '#f59e0b', '#f97316'][i] }
         })),
       },
     ],
