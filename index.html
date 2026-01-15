@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DualSpend - Intelligent Expense Management</title>
+
+    <meta name="description" content="Company Expense Tracker SaaS Dashboard" />
+    <meta property="og:title" content="DualSpend SaaS" />
+    <meta property="og:description" content="Modern expense management for high-growth teams." />
+    <meta property="og:type" content="website" />
+
+    <!-- Preconnect for fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  </head>
+  <body class="bg-gray-50/50 antialiased selection:bg-indigo-100 selection:text-indigo-700">
+    <div id="root">
+      <!-- Fallback loading state -->
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Inter', sans-serif; color: #6b7280;">
+        <div style="text-align: center;">
+          <div style="width: 32px; height: 32px; border: 3px solid #f3f4f6; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;"></div>
+          <p style="font-size: 0.875rem; font-weight: 500;">Loading Dashboard...</p>
+        </div>
+        <style>
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
