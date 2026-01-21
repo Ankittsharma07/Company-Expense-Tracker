@@ -15,8 +15,8 @@ export const LandingPage = () => {
             <span className="text-xl font-semibold text-slate-900 tracking-tight font-display">DualSpend</span>
           </div>
           <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Log in</Link>
-            <Link to="/dashboard">
+            <Link to="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Log in</Link>
+            <Link to="/signup">
               <Button size="sm" className="rounded-full px-6">Get Started</Button>
             </Link>
           </div>
@@ -41,7 +41,7 @@ export const LandingPage = () => {
               Control spend, automate approvals, and close books faster. The all-in-one platform designed for high-growth startups.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20">
-              <Link to="/dashboard">
+              <Link to="/signup">
                 <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-teal-500/25 w-full sm:w-auto">
                   Start for free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>

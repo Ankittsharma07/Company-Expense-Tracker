@@ -1,21 +1,27 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  CreditCard, 
-  Users, 
-  Settings, 
-  PieChart, 
+import {
+  LayoutDashboard,
+  CreditCard,
+  Users,
+  Settings,
+  PieChart,
   FileText,
   Building2,
   LogOut,
   Hexagon
 } from 'lucide-react';
-import { useUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../lib/utils';
 
 export const Sidebar = () => {
-  const { role } = useUser();
+  const { user } = useAuth();
+
+  if (!user) {
+    return null;
+  }
+
+  const role = user.role.toLowerCase();
 
   const links = [
     { name: 'Overview', to: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },

@@ -1,14 +1,98 @@
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StatCard } from '../components/dashboard/StatCard';
 import { SpendTrendChart, CategoryPieChart } from '../components/dashboard/Charts';
 import { ExpenseTable } from '../components/dashboard/ExpenseTable';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { DollarSign, FileText, Users, TrendingUp, Download, FileSpreadsheet, Calendar } from 'lucide-react';
-import { STATS } from '../data/mockData';
 import { formatCurrency } from '../lib/utils';
+import { approveExpense, fetchCategoryTotals, fetchExpenses, fetchMonthlyTotals, fetchUsers } from '../lib/api';
+import type { ApiUser, CategoryTotal, Expense, MonthlyTotal } from '../lib/api';
 
 export const AdminDashboard = () => {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [monthlyTotals, setMonthlyTotals] = useState<MonthlyTotal[]>([]);
+  const [categoryTotals, setCategoryTotals] = useState<CategoryTotal[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const year = new Date().getFullYear();
+      const [expenseData, monthlyData, categoryData, userData] = await Promise.all([
+        fetchExpenses(),
+        fetchMonthlyTotals(year),
+        fetchCategoryTotals(),
+        fetchUsers(),
+      ]);
+      setExpenses(expenseData);
+      setMonthlyTotals(monthlyData);
+      setCategoryTotals(categoryData);
+      setUsers(userData);
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Failed to load dashboard data.';
+      const message = errMessage === 'unauthorized'
+        ? 'Session expired. Please sign in again.'
+        : errMessage;
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadDashboard();
+
+    // Set up polling for real-time updates every 30 seconds
+    const intervalId = setInterval(() => {
+      loadDashboard();
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [loadDashboard]);
+
+  const totalSpend = useMemo(() => {
+    return monthlyTotals.reduce((sum, entry) => sum + Number(entry.total || 0), 0);
+  }, [monthlyTotals]);
+
+  const monthlyAverage = useMemo(() => {
+    if (!monthlyTotals.length) return 0;
+    return totalSpend / monthlyTotals.length;
+  }, [monthlyTotals, totalSpend]);
+
+  const pendingApprovals = useMemo(() => {
+    return expenses.filter((expense) => ['PENDING', 'MANAGER_APPROVED'].includes(expense.status)).length;
+  }, [expenses]);
+
+  const activeEmployees = useMemo(() => {
+    return users.filter((user) => user.role !== 'ADMIN').length;
+  }, [users]);
+
+  const handleApprove = async (expense: Expense) => {
+    try {
+      await approveExpense(expense.id, 'admin', { decision: 'approve' });
+      await loadDashboard();
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Failed to approve expense.';
+      setError(errMessage);
+    }
+  };
+
+  const handleReject = async (expense: Expense) => {
+    try {
+      await approveExpense(expense.id, 'admin', { decision: 'reject' });
+      await loadDashboard();
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Failed to reject expense.';
+      setError(errMessage);
+    }
+  };
+
   return (
     <div className="space-y-10 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-slate-200/60">
@@ -33,25 +117,25 @@ export const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 stagger-children">
         <StatCard
           title="Total Spend"
-          value={formatCurrency(STATS.totalSpend)}
+          value={isLoading ? '—' : formatCurrency(totalSpend)}
           icon={<DollarSign className="w-5 h-5" />}
           trend={{ value: 12.5, isPositive: true }}
         />
         <StatCard
           title="Pending Approvals"
-          value={STATS.pendingApprovals.toString()}
+          value={isLoading ? '—' : pendingApprovals.toString()}
           icon={<FileText className="w-5 h-5" />}
           trend={{ value: 2.1, isPositive: false }}
         />
         <StatCard
           title="Active Employees"
-          value={STATS.activeEmployees.toString()}
+          value={isLoading ? '—' : activeEmployees.toString()}
           icon={<Users className="w-5 h-5" />}
           trend={{ value: 4.5, isPositive: true }}
         />
         <StatCard
           title="Monthly Average"
-          value={formatCurrency(STATS.monthlyAverage)}
+          value={isLoading ? '—' : formatCurrency(monthlyAverage)}
           icon={<TrendingUp className="w-5 h-5" />}
         />
       </div>
@@ -62,7 +146,13 @@ export const AdminDashboard = () => {
             <CardTitle>Spend Trends</CardTitle>
           </CardHeader>
           <CardContent>
-            <SpendTrendChart />
+            {isLoading ? (
+              <div className="py-10 text-sm text-slate-500">Loading chart...</div>
+            ) : error ? (
+              <div className="py-10 text-sm text-rose-600">{error}</div>
+            ) : (
+              <SpendTrendChart data={monthlyTotals} />
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -70,7 +160,13 @@ export const AdminDashboard = () => {
             <CardTitle>Spend by Category</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryPieChart />
+            {isLoading ? (
+              <div className="py-10 text-sm text-slate-500">Loading chart...</div>
+            ) : error ? (
+              <div className="py-10 text-sm text-rose-600">{error}</div>
+            ) : (
+              <CategoryPieChart data={categoryTotals} />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -78,9 +174,24 @@ export const AdminDashboard = () => {
       <Card>
         <CardHeader className="flex items-center justify-between">
           <CardTitle>Recent Transactions</CardTitle>
-          <Button variant="ghost" size="sm" className="text-teal-700 hover:text-teal-800 hover:bg-teal-50/70">View All</Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-teal-700 hover:text-teal-800 hover:bg-teal-50/70"
+            onClick={() => setShowAllExpenses(!showAllExpenses)}
+          >
+            {showAllExpenses ? 'Show Less' : 'View All'}
+          </Button>
         </CardHeader>
-        <ExpenseTable limit={5} showActions={true} />
+        <ExpenseTable
+          data={expenses}
+          limit={showAllExpenses ? undefined : 5}
+          showActions={true}
+          isLoading={isLoading}
+          error={error}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
       </Card>
     </div>
   );
