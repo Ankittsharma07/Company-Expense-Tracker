@@ -26,11 +26,11 @@ export const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-premium-purple-50/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2.5 text-teal-700 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+        <div className="flex items-center justify-center gap-2.5 text-premium-purple-700 mb-8">
+          <div className="w-10 h-10 bg-gradient-to-br from-premium-purple-500 to-premium-purple-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-premium-purple-500/20">
             <Hexagon className="w-6 h-6 fill-current" />
           </div>
           <span className="text-2xl font-semibold text-slate-900 tracking-tight font-display">DualSpend</span>

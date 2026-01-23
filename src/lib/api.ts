@@ -32,32 +32,46 @@ const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> 
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  // Add timeout to prevent hanging
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-  if (response.status === 401) {
-    // Clear token and trigger logout
-    clearAuthToken();
-    if (onUnauthorized) {
-      onUnauthorized();
-    }
-    throw new Error("Session expired. Please login again.");
-  }
-
-  let payload: any = null;
   try {
-    payload = await response.json();
-  } catch (error) {
-    payload = null;
-  }
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    throw new Error(payload?.message || "Request failed");
-  }
+    if (response.status === 401) {
+      // Clear token and trigger logout
+      clearAuthToken();
+      if (onUnauthorized) {
+        onUnauthorized();
+      }
+      throw new Error("Session expired. Please login again.");
+    }
 
-  return payload as T;
+    let payload: any = null;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      throw new Error(payload?.message || "Request failed");
+    }
+
+    return payload as T;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error("Request timeout. Please check your connection and try again.");
+    }
+    throw error;
+  }
 };
 
 export type ApiUser = {
@@ -68,13 +82,20 @@ export type ApiUser = {
   companyId: string;
 };
 
+// Expense status enum matching backend
+export type ExpenseStatus =
+  | "PENDING_MANAGER"
+  | "PENDING_ADMIN"
+  | "APPROVED"
+  | "REJECTED";
+
 export type Expense = {
   id: string;
   description: string;
   category: string;
   amount: number | string;
   currency?: string;
-  status: string;
+  status: ExpenseStatus;
   receiptUrl?: string | null;
   expenseDate: string;
   createdAt: string;
@@ -162,11 +183,101 @@ export const fetchCategoryTotals = (from?: string, to?: string) => {
   return apiFetch<CategoryTotal[]>(`/api/analytics/categories${query ? `?${query}` : ""}`);
 };
 
+// Approval API functions
 export const approveExpense = (expenseId: string, level: "manager" | "admin", payload: { decision: "approve" | "reject"; comment?: string }) => {
   return apiFetch<Expense>(`/api/approvals/${expenseId}/${level}`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
+};
+
+// Get pending approvals for current user's role
+export const fetchPendingApprovals = () => {
+  return apiFetch<Expense[]>("/api/approvals/pending");
+};
+
+// Get approval counts for dashboard
+export const fetchApprovalCounts = () => {
+  return apiFetch<{ pending: number }>("/api/approvals/counts");
+};
+
+// Approve expense (Manager or Admin)
+export const approveExpenseById = (expenseId: string, role: "MANAGER" | "ADMIN", comment?: string) => {
+  const level = role === "MANAGER" ? "manager" : "admin";
+  return approveExpense(expenseId, level, { decision: "approve", comment });
+};
+
+// Reject expense (Manager or Admin)
+export const rejectExpenseById = (expenseId: string, role: "MANAGER" | "ADMIN", comment?: string) => {
+  const level = role === "MANAGER" ? "manager" : "admin";
+  return approveExpense(expenseId, level, { decision: "reject", comment });
+};
+
+// Export/Report API functions
+export const exportToExcel = async (startDate: string, endDate: string): Promise<Blob> => {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const search = new URLSearchParams();
+  search.append("startDate", startDate);
+  search.append("endDate", endDate);
+
+  const response = await fetch(`${API_BASE_URL}/api/reports/export/excel?${search.toString()}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (response.status === 401) {
+    clearAuthToken();
+    if (onUnauthorized) {
+      onUnauthorized();
+    }
+    throw new Error("Session expired. Please login again.");
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to export to Excel");
+  }
+
+  return response.blob();
+};
+
+export const exportToPDF = async (startDate: string, endDate: string): Promise<Blob> => {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const search = new URLSearchParams();
+  search.append("startDate", startDate);
+  search.append("endDate", endDate);
+
+  const response = await fetch(`${API_BASE_URL}/api/reports/export/pdf?${search.toString()}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (response.status === 401) {
+    clearAuthToken();
+    if (onUnauthorized) {
+      onUnauthorized();
+    }
+    throw new Error("Session expired. Please login again.");
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to export to PDF");
+  }
+
+  return response.blob();
 };
 
 // Auth API types

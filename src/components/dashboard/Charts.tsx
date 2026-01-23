@@ -57,12 +57,12 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
       className: 'echarts-tooltip',
       padding: 0,
       borderWidth: 0,
-      textStyle: { color: '#1f2937', fontSize: 12 },
+      textStyle: { color: '#1f2937', fontSize: 13 },
       formatter: (params: any) => {
         const param = params[0];
-        return `<div style="padding: 8px 12px; background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <div style="font-weight: 600; margin-bottom: 4px;">${param.name}</div>
-          <div style="color: #0ea5a4; font-weight: 600;">$${param.value.toLocaleString()}</div>
+        return `<div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); backdrop-filter: blur(12px); border-radius: 12px; box-shadow: 0 8px 32px rgba(102,126,234,0.15), 0 0 0 1px rgba(255,255,255,0.5); border: 1px solid rgba(168,85,247,0.2);">
+          <div style="font-weight: 600; margin-bottom: 6px; color: #0f172a; font-size: 13px;">${param.name}</div>
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; font-size: 16px;">$${param.value.toLocaleString()}</div>
         </div>`;
       }
     },
@@ -108,26 +108,39 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
       {
         name: 'Spend',
         type: 'line',
-        smooth: 0.35,
+        smooth: 0.4,
         symbol: 'circle',
-        symbolSize: 6,
+        symbolSize: 8,
         lineStyle: {
-          width: 3,
-          color: '#0ea5a4',
-          type: 'solid'
+          width: 4,
+          color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 1, y2: 0,
+            colorStops: [
+              { offset: 0, color: '#667eea' },
+              { offset: 0.5, color: '#764ba2' },
+              { offset: 1, color: '#a855f7' }
+            ]
+          },
+          shadowColor: 'rgba(102, 126, 234, 0.4)',
+          shadowBlur: 12,
+          shadowOffsetY: 4
         },
         itemStyle: {
-          color: '#0ea5a4',
+          color: '#667eea',
           borderColor: '#fff',
-          borderWidth: 2
+          borderWidth: 3,
+          shadowColor: 'rgba(102, 126, 234, 0.5)',
+          shadowBlur: 10
         },
         areaStyle: {
           color: {
             type: 'linear',
             x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(14, 165, 164, 0.2)' },
-              { offset: 1, color: 'rgba(14, 165, 164, 0)' }
+              { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
+              { offset: 0.5, color: 'rgba(118, 75, 162, 0.2)' },
+              { offset: 1, color: 'rgba(168, 85, 247, 0.05)' }
             ]
           }
         },
@@ -135,13 +148,21 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
         showSymbol: true,
         emphasis: {
           scale: true,
-          scaleSize: 10
+          scaleSize: 12,
+          itemStyle: {
+            shadowBlur: 15,
+            shadowColor: 'rgba(102, 126, 234, 0.7)'
+          }
         }
       },
     ],
   };
 
-  return <ReactECharts option={option} style={{ height: '320px' }} />;
+  return (
+    <div style={{ position: 'relative', height: '320px' }}>
+      <ReactECharts option={option} style={{ height: '100%' }} />
+    </div>
+  );
 };
 
 export const CategoryPieChart = ({ data }: { data: CategoryTotal[] }) => {
@@ -157,18 +178,55 @@ export const CategoryPieChart = ({ data }: { data: CategoryTotal[] }) => {
     );
   }
 
-  const colors = ['#0ea5a4', '#38bdf8', '#f59e0b', '#f97316', '#a855f7', '#22c55e'];
+  const colors = [
+    { color: ['#667eea', '#764ba2'], name: 'Purple' },
+    { color: ['#4facfe', '#00f2fe'], name: 'Blue' },
+    { color: ['#f093fb', '#f5576c'], name: 'Pink' },
+    { color: ['#fa709a', '#fee140'], name: 'Orange' },
+    { color: ['#a855f7', '#9333ea'], name: 'Violet' },
+    { color: ['#3b82f6', '#2563eb'], name: 'Sky' }
+  ];
+
   const option = {
     tooltip: {
       trigger: 'item',
       className: 'echarts-tooltip',
+      confine: false, // Allow tooltip to overflow to header
+      position: function(_point: any, _params: any, _dom: any, _rect: any, size: any) {
+        // Position tooltip in the CardHeader area (above the chart)
+        const chartWidth = size.viewSize[0];
+        const tooltipWidth = size.contentSize[0];
+
+        // Negative top value to move tooltip into CardHeader
+        // CardHeader height is approximately 60px, CardContent padding is 24px
+        return [
+          chartWidth - tooltipWidth - 16, // 16px from right edge
+          -84 // Move up into CardHeader (60px header + 24px padding)
+        ];
+      },
+      formatter: (params: any) => {
+        return `<div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); backdrop-filter: blur(12px); border-radius: 12px; box-shadow: 0 8px 32px rgba(15,23,42,0.12), 0 0 0 1px rgba(255,255,255,0.5); border: 1px solid rgba(148,163,184,0.2); min-width: 200px;">
+          <div style="font-weight: 600; margin-bottom: 6px; color: #0f172a; font-size: 13px;">${params.name}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: ${params.color};"></div>
+            <div style="font-weight: 700; font-size: 16px; color: #0f172a;">$${params.value.toLocaleString()}</div>
+            <div style="color: #64748b; font-size: 12px;">(${params.percent}%)</div>
+          </div>
+        </div>`;
+      }
     },
     legend: {
       bottom: '5%',
       left: 'center',
       icon: 'circle',
-      itemGap: 20,
-      textStyle: { color: '#64748b' }
+      itemGap: 24,
+      itemWidth: 10,
+      itemHeight: 10,
+      textStyle: {
+        color: '#64748b',
+        fontSize: 13,
+        fontWeight: 500
+      }
     },
     series: [
       {
@@ -178,29 +236,50 @@ export const CategoryPieChart = ({ data }: { data: CategoryTotal[] }) => {
         center: ['50%', '40%'],
         avoidLabelOverlap: false,
         itemStyle: {
-          borderRadius: 6,
+          borderRadius: 8,
           borderColor: '#fff',
-          borderWidth: 3,
+          borderWidth: 4,
+          shadowBlur: 12,
+          shadowColor: 'rgba(0, 0, 0, 0.08)'
         },
         label: { show: false },
+        labelLine: { show: false },
         emphasis: {
           label: {
             show: true,
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: 'bold',
-            color: '#0f172a'
+            color: '#0f172a',
+            textShadowBlur: 4,
+            textShadowColor: 'rgba(0, 0, 0, 0.1)'
           },
           scale: true,
-          scaleSize: 5
+          scaleSize: 8,
+          itemStyle: {
+            shadowBlur: 20,
+            shadowColor: 'rgba(0, 0, 0, 0.15)'
+          }
         },
-        data: data.map((c, i) => ({
-          value: c.total,
-          name: c.category,
-          itemStyle: { color: colors[i % colors.length] }
-        })),
+        data: data.map((c, i) => {
+          const colorPair = colors[i % colors.length];
+          return {
+            value: c.total,
+            name: c.category,
+            itemStyle: {
+              color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: colorPair.color[0] },
+                  { offset: 1, color: colorPair.color[1] }
+                ]
+              }
+            }
+          };
+        }),
       },
     ],
   };
 
-  return <ReactECharts option={option} style={{ height: '320px' }} />;
+  return <ReactECharts key={Date.now()} option={option} style={{ height: '320px' }} notMerge={true} lazyUpdate={false} />;
 };

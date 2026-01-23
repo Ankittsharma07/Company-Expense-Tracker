@@ -50,13 +50,14 @@ export const EmployeeDashboard = () => {
 
   const totalSpend = useMemo(() => {
     return expenses
-      .filter((expense) => ['MANAGER_APPROVED', 'ADMIN_APPROVED'].includes(expense.status))
+      .filter((expense) => expense.status !== 'REJECTED')
       .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   }, [expenses]);
 
   const pendingReimbursement = useMemo(() => {
+    const pendingStatuses = new Set(['PENDING_MANAGER', 'PENDING_ADMIN', 'PENDING']);
     return expenses
-      .filter((expense) => expense.status === 'PENDING')
+      .filter((expense) => pendingStatuses.has(expense.status))
       .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   }, [expenses]);
 

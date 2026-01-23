@@ -39,7 +39,7 @@ export const ManagerDashboard = () => {
   }, [loadExpenses]);
 
   const pendingReview = useMemo(() => {
-    return expenses.filter((expense) => expense.status === 'PENDING').length;
+    return expenses.filter((expense) => expense.status === 'PENDING_MANAGER' || expense.status === 'PENDING').length;
   }, [expenses]);
 
   const rejectedCount = useMemo(() => {
@@ -51,7 +51,7 @@ export const ManagerDashboard = () => {
     const month = now.getMonth();
     const year = now.getFullYear();
     return expenses
-      .filter((expense) => ['MANAGER_APPROVED', 'ADMIN_APPROVED'].includes(expense.status))
+      .filter((expense) => ['PENDING_ADMIN', 'APPROVED', 'MANAGER_APPROVED', 'ADMIN_APPROVED'].includes(expense.status))
       .filter((expense) => {
         const created = new Date(expense.createdAt);
         return created.getMonth() === month && created.getFullYear() === year;
@@ -60,7 +60,7 @@ export const ManagerDashboard = () => {
   }, [expenses]);
 
   const pendingExpenses = useMemo(() => {
-    return expenses.filter((expense) => expense.status === 'PENDING');
+    return expenses.filter((expense) => expense.status === 'PENDING_MANAGER' || expense.status === 'PENDING');
   }, [expenses]);
 
   const handleApprove = async (expense: Expense) => {
@@ -120,6 +120,7 @@ export const ManagerDashboard = () => {
           showActions={true}
           isLoading={isLoading}
           error={error}
+          canApprove={(expense) => expense.status === 'PENDING_MANAGER' || expense.status === 'PENDING'}
           onApprove={handleApprove}
           onReject={handleReject}
         />

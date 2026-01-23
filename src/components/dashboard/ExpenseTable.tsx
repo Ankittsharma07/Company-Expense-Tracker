@@ -11,7 +11,7 @@ interface ExpenseTableProps {
   showActions?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
-  canApprove?: boolean;
+  canApprove?: boolean | ((expense: Expense) => boolean);
   isLoading?: boolean;
   error?: string | null;
   onApprove?: (expense: Expense) => void;
@@ -21,10 +21,15 @@ interface ExpenseTableProps {
 }
 
 const STATUS_MAP: Record<string, { label: string; badge: 'pending' | 'approved' | 'rejected' | 'default' }> = {
-  PENDING: { label: 'Pending', badge: 'pending' },
-  MANAGER_APPROVED: { label: 'Manager Approved', badge: 'approved' },
-  ADMIN_APPROVED: { label: 'Approved', badge: 'approved' },
+  // Current statuses
+  PENDING_MANAGER: { label: 'Pending Manager', badge: 'pending' },
+  PENDING_ADMIN: { label: 'Pending Admin', badge: 'pending' },
+  APPROVED: { label: 'Approved', badge: 'approved' },
   REJECTED: { label: 'Rejected', badge: 'rejected' },
+  // Legacy fallbacks
+  PENDING: { label: 'Pending Manager', badge: 'pending' },
+  MANAGER_APPROVED: { label: 'Pending Admin', badge: 'pending' },
+  ADMIN_APPROVED: { label: 'Approved', badge: 'approved' },
 };
 
 const normalizeAmount = (amount: Expense['amount']) => {
@@ -87,11 +92,18 @@ export const ExpenseTable = ({
             </tr>
           )}
           {!isLoading && !error && rows.map((expense) => {
-            const statusKey = expense.status?.toUpperCase?.() || expense.status;
+            const statusKey = (expense.status || '').toString().toUpperCase();
             const statusConfig = STATUS_MAP[statusKey] || { label: expense.status, badge: 'default' };
-            const isPending = statusKey === 'PENDING';
-            const canApproveRow = statusKey === 'PENDING' || statusKey === 'MANAGER_APPROVED';
-            const showFallback = !(canApprove && canApproveRow) && !canEdit && !canDelete;
+            const isEditablePending = statusKey === 'PENDING_MANAGER' || statusKey === 'PENDING';
+            const isApprovalStatus =
+              statusKey === 'PENDING_MANAGER' ||
+              statusKey === 'PENDING_ADMIN' ||
+              statusKey === 'PENDING' ||
+              statusKey === 'MANAGER_APPROVED';
+            const canApproveForRow =
+              typeof canApproveProp === 'function' ? canApproveProp(expense) : Boolean(canApprove);
+            const canApproveRow = canApproveForRow && isApprovalStatus;
+            const showFallback = !canApproveRow && !canEdit && !canDelete;
             return (
             <tr key={expense.id} className="hover:bg-white/80 transition-colors group">
               <td className="px-6 py-4">
@@ -117,7 +129,7 @@ export const ExpenseTable = ({
               {showActions && (
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                    {canApprove && canApproveRow && (
+                    {canApproveRow && (
                       <>
                         {onApprove && (
                           <Button
@@ -145,10 +157,10 @@ export const ExpenseTable = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-teal-600"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-premium-purple-600"
                         onClick={() => onEdit?.(expense)}
-                        disabled={!isPending}
-                        title={!isPending ? "Only pending expenses can be edited" : "Edit expense"}
+                        disabled={!isEditablePending}
+                        title={!isEditablePending ? "Only pending expenses can be edited" : "Edit expense"}
                       >
                         <Pencil className="w-4 h-4" />
                       </Button>
@@ -159,8 +171,8 @@ export const ExpenseTable = ({
                         size="sm"
                         className="h-8 w-8 p-0 text-rose-500 hover:bg-rose-50/70"
                         onClick={() => onDelete?.(expense)}
-                        disabled={!isPending}
-                        title={!isPending ? "Only pending expenses can be deleted" : "Delete expense"}
+                        disabled={!isEditablePending}
+                        title={!isEditablePending ? "Only pending expenses can be deleted" : "Delete expense"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

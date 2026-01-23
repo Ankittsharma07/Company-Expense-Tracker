@@ -79,7 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Note: fetchMe doesn't return company info, so we'll set it from login/signup
         // or fetch it separately if needed
       } catch (err) {
-        // Token is invalid, clear it
+        // Token is invalid or API is down, clear it and continue
+        console.error('Failed to load user:', err);
         api.clearAuthToken();
         setUser(null);
         setCompany(null);
@@ -88,7 +89,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    loadUser();
+    // Add a safety timeout to ensure loading state doesn't hang forever
+    const timeoutId = setTimeout(() => {
+      console.warn('Auth loading timeout - forcing completion');
+      setIsLoading(false);
+    }, 5000);
+
+    loadUser().finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const login = async (email: string, password: string) => {

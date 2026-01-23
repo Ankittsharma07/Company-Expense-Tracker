@@ -22,17 +22,22 @@ export const managerApproveService = async ({ companyId, expenseId, approvedById
     throw new Error("Expense not found");
   }
 
-  if (expense.status !== "PENDING") {
-    throw new Error("Only pending expenses can be manager-approved");
+  // Strict status validation: Manager can only act on PENDING_MANAGER
+  if (expense.status !== "PENDING_MANAGER") {
+    throw new Error("Only expenses with PENDING_MANAGER status can be acted upon by managers");
   }
+
+  // Status transition: PENDING_MANAGER -> PENDING_ADMIN (approve) or REJECTED (reject)
+  const newStatus = decision === "approve" ? "PENDING_ADMIN" : "REJECTED";
 
   const updated = await prisma.expense.update({
     where: { id: expenseId },
     data: {
-      status: decision === "approve" ? "MANAGER_APPROVED" : "REJECTED",
+      status: newStatus,
     },
   });
 
+  // Create audit trail
   await buildApproval({
     companyId,
     expenseId,
@@ -54,17 +59,22 @@ export const adminApproveService = async ({ companyId, expenseId, approvedById, 
     throw new Error("Expense not found");
   }
 
-  if (!["PENDING", "MANAGER_APPROVED"].includes(expense.status)) {
-    throw new Error("Expense cannot be admin-approved in current status");
+  // Strict status validation: Admin can only act on PENDING_ADMIN
+  if (expense.status !== "PENDING_ADMIN") {
+    throw new Error("Only expenses with PENDING_ADMIN status can be acted upon by admins");
   }
+
+  // Status transition: PENDING_ADMIN -> APPROVED (approve) or REJECTED (reject)
+  const newStatus = decision === "approve" ? "APPROVED" : "REJECTED";
 
   const updated = await prisma.expense.update({
     where: { id: expenseId },
     data: {
-      status: decision === "approve" ? "ADMIN_APPROVED" : "REJECTED",
+      status: newStatus,
     },
   });
 
+  // Create audit trail
   await buildApproval({
     companyId,
     expenseId,
@@ -75,4 +85,64 @@ export const adminApproveService = async ({ companyId, expenseId, approvedById, 
   });
 
   return updated;
+};
+
+// Fetch pending approvals based on user role
+export const getPendingApprovalsService = async ({ companyId, userRole }) => {
+  let statusFilter;
+
+  // Role-based filtering
+  if (userRole === "MANAGER") {
+    // Managers see expenses with PENDING_MANAGER status
+    statusFilter = "PENDING_MANAGER";
+  } else if (userRole === "ADMIN") {
+    // Admins see expenses with PENDING_ADMIN status
+    statusFilter = "PENDING_ADMIN";
+  } else {
+    // Employees cannot approve anything
+    return [];
+  }
+
+  const expenses = await prisma.expense.findMany({
+    where: {
+      companyId,
+      status: statusFilter,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return expenses;
+};
+
+// Get approval counts for dashboard
+export const getApprovalCountsService = async ({ companyId, userRole }) => {
+  let statusFilter;
+
+  if (userRole === "MANAGER") {
+    statusFilter = "PENDING_MANAGER";
+  } else if (userRole === "ADMIN") {
+    statusFilter = "PENDING_ADMIN";
+  } else {
+    return { pending: 0 };
+  }
+
+  const count = await prisma.expense.count({
+    where: {
+      companyId,
+      status: statusFilter,
+    },
+  });
+
+  return { pending: count };
 };

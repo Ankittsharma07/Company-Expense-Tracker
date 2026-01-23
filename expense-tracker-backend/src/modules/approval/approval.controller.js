@@ -1,5 +1,10 @@
 ﻿import { z } from "zod";
-import { managerApproveService, adminApproveService } from "./approval.service.js";
+import {
+  managerApproveService,
+  adminApproveService,
+  getPendingApprovalsService,
+  getApprovalCountsService
+} from "./approval.service.js";
 
 const decisionSchema = z.object({
   decision: z.enum(["approve", "reject"]),
@@ -41,5 +46,33 @@ export const adminApprove = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
     return res.status(400).json({ message: error.message || "Approval failed" });
+  }
+};
+
+// Get pending approvals for current user's role
+export const getPendingApprovals = async (req, res) => {
+  try {
+    const expenses = await getPendingApprovalsService({
+      companyId: req.user.companyId,
+      userRole: req.user.role,
+    });
+    return res.json(expenses);
+  } catch (error) {
+    console.error("Get pending approvals error:", error);
+    return res.status(500).json({ message: error.message || "Failed to fetch pending approvals" });
+  }
+};
+
+// Get approval counts for dashboard
+export const getApprovalCounts = async (req, res) => {
+  try {
+    const counts = await getApprovalCountsService({
+      companyId: req.user.companyId,
+      userRole: req.user.role,
+    });
+    return res.json(counts);
+  } catch (error) {
+    console.error("Get approval counts error:", error);
+    return res.status(500).json({ message: error.message || "Failed to fetch approval counts" });
   }
 };
