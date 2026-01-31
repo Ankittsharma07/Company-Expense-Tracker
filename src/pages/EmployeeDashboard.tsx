@@ -20,6 +20,8 @@ export const EmployeeDashboard = () => {
     amount: '',
     date: '',
     category: 'Travel',
+    receiptFile: null as File | null,
+    removeReceipt: false,
   });
 
   const loadExpenses = useCallback(async () => {
@@ -67,6 +69,8 @@ export const EmployeeDashboard = () => {
       amount: '',
       date: '',
       category: 'Travel',
+      receiptFile: null,
+      removeReceipt: false,
     });
     setEditingExpense(null);
   };
@@ -85,6 +89,8 @@ export const EmployeeDashboard = () => {
       amount: String(expense.amount ?? ''),
       date: expense.expenseDate ? new Date(expense.expenseDate).toISOString().split('T')[0] : '',
       category: expense.category,
+      receiptFile: null,
+      removeReceipt: false,
     });
     setIsModalOpen(true);
   };
@@ -115,6 +121,8 @@ export const EmployeeDashboard = () => {
           category: formState.category,
           amount: amountValue,
           expenseDate: formState.date ? new Date(formState.date).toISOString() : undefined,
+          receiptFile: formState.receiptFile,
+          removeReceipt: formState.removeReceipt,
         });
       } else {
         await createExpense({
@@ -122,6 +130,7 @@ export const EmployeeDashboard = () => {
           category: formState.category,
           amount: amountValue,
           expenseDate: formState.date ? new Date(formState.date).toISOString() : undefined,
+          receiptFile: formState.receiptFile,
         });
       }
       setIsModalOpen(false);
@@ -233,6 +242,66 @@ export const EmployeeDashboard = () => {
               <option value="Software">Software</option>
               <option value="Office Supplies">Office Supplies</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {editingExpense ? 'Replace Receipt (optional)' : 'Receipt (optional)'}
+            </label>
+            {editingExpense?.receiptUrl && !formState.removeReceipt && (
+              <div className="flex items-center gap-3 mb-2">
+                <a
+                  href={editingExpense.receiptUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex text-xs text-teal-600 hover:text-teal-700"
+                >
+                  View current receipt
+                </a>
+                <button
+                  type="button"
+                  className="text-xs text-rose-600 hover:text-rose-700"
+                  onClick={() =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      removeReceipt: true,
+                      receiptFile: null,
+                    }))
+                  }
+                >
+                  Remove receipt
+                </button>
+              </div>
+            )}
+            {editingExpense?.receiptUrl && formState.removeReceipt && (
+              <div className="flex items-center gap-2 mb-2 text-xs text-rose-600">
+                <span>Receipt will be removed on save.</span>
+                <button
+                  type="button"
+                  className="text-xs text-slate-500 hover:text-slate-700"
+                  onClick={() =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      removeReceipt: false,
+                    }))
+                  }
+                >
+                  Undo
+                </button>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,application/pdf"
+              onChange={(e) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  receiptFile: e.target.files?.[0] || null,
+                  removeReceipt: false,
+                }))
+              }
+              className="w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+            />
+            <p className="mt-1 text-xs text-slate-500">Accepted: JPG, PNG, PDF. Max 5MB.</p>
           </div>
           <div className="pt-4 flex justify-end gap-3">
             <Button

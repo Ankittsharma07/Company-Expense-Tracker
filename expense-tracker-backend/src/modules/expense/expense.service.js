@@ -10,6 +10,9 @@ export const createExpenseService = async (companyId, userId, data) => {
       amount: data.amount,
       currency: data.currency || "USD",
       receiptUrl: data.receiptUrl || null,
+      receiptPublicId: data.receiptPublicId || null,
+      receiptType: data.receiptType || null,
+      uploadedAt: data.uploadedAt || null,
       expenseDate: data.expenseDate ? new Date(data.expenseDate) : new Date(),
     },
   });
@@ -65,6 +68,12 @@ export const getExpenseService = async ({ companyId, user, expenseId }) => {
   });
 };
 
+export const getExpenseByIdService = async ({ companyId, expenseId }) => {
+  return prisma.expense.findFirst({
+    where: { id: expenseId, companyId },
+  });
+};
+
 export const updateExpenseService = async ({ companyId, userId, expenseId, data }) => {
   const expense = await prisma.expense.findFirst({
     where: { id: expenseId, companyId, userId },
@@ -84,7 +93,10 @@ export const updateExpenseService = async ({ companyId, userId, expenseId, data 
       category: data.category ?? expense.category,
       amount: data.amount ?? expense.amount,
       currency: data.currency ?? expense.currency,
-      receiptUrl: data.receiptUrl ?? expense.receiptUrl,
+      receiptUrl: data.receiptUrl !== undefined ? data.receiptUrl : expense.receiptUrl,
+      receiptPublicId: data.receiptPublicId !== undefined ? data.receiptPublicId : expense.receiptPublicId,
+      receiptType: data.receiptType !== undefined ? data.receiptType : expense.receiptType,
+      uploadedAt: data.uploadedAt !== undefined ? data.uploadedAt : expense.uploadedAt,
       expenseDate: data.expenseDate ? new Date(data.expenseDate) : expense.expenseDate,
     },
   });

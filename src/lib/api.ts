@@ -23,8 +23,9 @@ export const setUnauthorizedHandler = (handler: () => void) => {
 
 const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const token = getAuthToken();
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string>),
   };
 
@@ -143,24 +144,66 @@ export const fetchExpenses = (params: Record<string, string | undefined> = {}) =
   return apiFetch<Expense[]>(`/api/expenses${query ? `?${query}` : ""}`);
 };
 
-export const createExpense = (payload: {
+type ExpenseCreatePayload = {
   description: string;
   category: string;
   amount: number;
   currency?: string;
-  receiptUrl?: string | null;
   expenseDate?: string;
-}) => {
+  receiptFile?: File | null;
+};
+
+type ExpenseUpdatePayload = Partial<Expense> & {
+  receiptFile?: File | null;
+  removeReceipt?: boolean;
+};
+
+const buildExpenseFormData = (payload: ExpenseCreatePayload | ExpenseUpdatePayload) => {
+  const formData = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (key === "receiptFile" && value instanceof File) {
+      formData.append("receipt", value);
+      return;
+    }
+    if (key === "removeReceipt" && typeof value === "boolean") {
+      formData.append("removeReceipt", value ? "true" : "false");
+      return;
+    }
+    formData.append(key, String(value));
+  });
+  return formData;
+};
+
+export const createExpense = (payload: ExpenseCreatePayload) => {
+  if (payload.receiptFile) {
+    const formData = buildExpenseFormData(payload);
+    return apiFetch<Expense>("/api/expenses", {
+      method: "POST",
+      body: formData,
+    });
+  }
+
+  const { receiptFile, ...rest } = payload;
   return apiFetch<Expense>("/api/expenses", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(rest),
   });
 };
 
-export const updateExpense = (id: string, payload: Partial<Expense>) => {
+export const updateExpense = (id: string, payload: ExpenseUpdatePayload) => {
+  if (payload.receiptFile) {
+    const formData = buildExpenseFormData(payload);
+    return apiFetch<Expense>(`/api/expenses/${id}`, {
+      method: "PATCH",
+      body: formData,
+    });
+  }
+
+  const { receiptFile, ...rest } = payload;
   return apiFetch<Expense>(`/api/expenses/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(rest),
   });
 };
 

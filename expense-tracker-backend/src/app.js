@@ -8,7 +8,7 @@ import { registerRoutes } from "./routes.js";
 const app = express();
 
 app.use(helmet());
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(morgan("combined"));
 
 const corsOptions = {

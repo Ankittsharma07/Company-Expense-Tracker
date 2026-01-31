@@ -18,4 +18,7 @@ export const env = {
   bcryptSaltRounds: Number(process.env.BCRYPT_SALT_ROUNDS || 10),
   freePlanEmployeeLimit: Number(process.env.FREE_PLAN_EMPLOYEE_LIMIT || 5),
   corsOrigin: process.env.CORS_ORIGIN || "*",
+  cloudinaryCloudName: requireEnv("CLOUDINARY_CLOUD_NAME"),
+  cloudinaryApiKey: requireEnv("CLOUDINARY_API_KEY"),
+  cloudinaryApiSecret: requireEnv("CLOUDINARY_API_SECRET"),
 };

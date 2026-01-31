@@ -55,9 +55,20 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
     tooltip: {
       trigger: 'axis',
       className: 'echarts-tooltip',
+      confine: true,
+      appendToBody: false,
       padding: 0,
       borderWidth: 0,
       textStyle: { color: '#1f2937', fontSize: 13 },
+      position: function (_point: any, _params: any, _dom: any, _rect: any, size: any) {
+        const tooltipWidth = size.contentSize[0];
+        const tooltipHeight = size.contentSize[1];
+        const viewWidth = size.viewSize[0];
+        const viewHeight = size.viewSize[1];
+        const left = Math.max((viewWidth - tooltipWidth) / 2, 8);
+        const top = Math.max((viewHeight - tooltipHeight) / 2, 8);
+        return [left, top];
+      },
       formatter: (params: any) => {
         const param = params[0];
         return `<div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); backdrop-filter: blur(12px); border-radius: 12px; box-shadow: 0 8px 32px rgba(102,126,234,0.15), 0 0 0 1px rgba(255,255,255,0.5); border: 1px solid rgba(168,85,247,0.2);">
@@ -191,18 +202,16 @@ export const CategoryPieChart = ({ data }: { data: CategoryTotal[] }) => {
     tooltip: {
       trigger: 'item',
       className: 'echarts-tooltip',
-      confine: false, // Allow tooltip to overflow to header
+      confine: true,
+      appendToBody: false,
       position: function(_point: any, _params: any, _dom: any, _rect: any, size: any) {
-        // Position tooltip in the CardHeader area (above the chart)
-        const chartWidth = size.viewSize[0];
         const tooltipWidth = size.contentSize[0];
-
-        // Negative top value to move tooltip into CardHeader
-        // CardHeader height is approximately 60px, CardContent padding is 24px
-        return [
-          chartWidth - tooltipWidth - 16, // 16px from right edge
-          -84 // Move up into CardHeader (60px header + 24px padding)
-        ];
+        const tooltipHeight = size.contentSize[1];
+        const viewWidth = size.viewSize[0];
+        const viewHeight = size.viewSize[1];
+        const left = Math.max((viewWidth - tooltipWidth) / 2, 8);
+        const top = Math.max((viewHeight - tooltipHeight) / 2, 8);
+        return [left, top];
       },
       formatter: (params: any) => {
         return `<div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); backdrop-filter: blur(12px); border-radius: 12px; box-shadow: 0 8px 32px rgba(15,23,42,0.12), 0 0 0 1px rgba(255,255,255,0.5); border: 1px solid rgba(148,163,184,0.2); min-width: 200px;">

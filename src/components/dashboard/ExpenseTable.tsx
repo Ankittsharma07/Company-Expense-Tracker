@@ -55,6 +55,7 @@ export const ExpenseTable = ({
   const canApprove = canApproveProp ?? Boolean(onApprove || onReject);
   const canEdit = canEditProp ?? Boolean(onEdit);
   const canDelete = canDeleteProp ?? Boolean(onDelete);
+  const columnCount = showActions ? 7 : 6;
 
   return (
     <div className="overflow-x-auto">
@@ -66,27 +67,28 @@ export const ExpenseTable = ({
             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
             <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Receipt</th>
             {showActions && <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100/80">
           {isLoading && (
             <tr>
-              <td className="px-6 py-6 text-sm text-slate-500" colSpan={showActions ? 6 : 5}>
+              <td className="px-6 py-6 text-sm text-slate-500" colSpan={columnCount}>
                 Loading expenses...
               </td>
             </tr>
           )}
           {!isLoading && error && (
             <tr>
-              <td className="px-6 py-6 text-sm text-rose-600" colSpan={showActions ? 6 : 5}>
+              <td className="px-6 py-6 text-sm text-rose-600" colSpan={columnCount}>
                 {error}
               </td>
             </tr>
           )}
           {!isLoading && !error && rows.length === 0 && (
             <tr>
-              <td className="px-6 py-6 text-sm text-slate-500" colSpan={showActions ? 6 : 5}>
+              <td className="px-6 py-6 text-sm text-slate-500" colSpan={columnCount}>
                 No expenses found.
               </td>
             </tr>
@@ -125,6 +127,20 @@ export const ExpenseTable = ({
               <td className="px-6 py-4 font-semibold text-slate-900 text-sm">{formatCurrency(normalizeAmount(expense.amount))}</td>
               <td className="px-6 py-4">
                 <Badge status={statusConfig.badge}>{statusConfig.label}</Badge>
+              </td>
+              <td className="px-6 py-4 text-sm">
+                {expense.receiptUrl ? (
+                  <a
+                    href={expense.receiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-teal-600 hover:text-teal-700 font-medium"
+                  >
+                    View
+                  </a>
+                ) : (
+                  <span className="text-slate-400">â€”</span>
+                )}
               </td>
               {showActions && (
                 <td className="px-6 py-4 text-right">
