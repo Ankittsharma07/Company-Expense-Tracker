@@ -8,6 +8,7 @@ import {
   deleteExpenseService,
 } from "./expense.service.js";
 import { uploadReceipt, deleteReceipt } from "../../services/storage/receiptStorage.js";
+import { notifyExpenseSubmitted } from "../../services/notifications/expenseNotifications.js";
 
 const createExpenseSchema = z.object({
   description: z.string().min(3),
@@ -44,6 +45,14 @@ export const createExpense = async (req, res) => {
     const expense = await createExpenseService(req.user.companyId, req.user.id, payload);
 
     if (!req.file) {
+      try {
+        await notifyExpenseSubmitted({
+          companyId: req.user.companyId,
+          expenseId: expense.id,
+        });
+      } catch (notificationError) {
+        console.error("Expense submitted notification failed:", notificationError.message);
+      }
       return res.status(201).json(expense);
     }
 
@@ -68,6 +77,15 @@ export const createExpense = async (req, res) => {
           uploadedAt: new Date(),
         },
       });
+
+      try {
+        await notifyExpenseSubmitted({
+          companyId: req.user.companyId,
+          expenseId: updatedExpense.id,
+        });
+      } catch (notificationError) {
+        console.error("Expense submitted notification failed:", notificationError.message);
+      }
 
       return res.status(201).json(updatedExpense);
     } catch (uploadError) {

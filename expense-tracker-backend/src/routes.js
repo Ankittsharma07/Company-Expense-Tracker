@@ -6,6 +6,7 @@ import { approvalRoutes } from "./modules/approval/approval.routes.js";
 import { analyticsRoutes } from "./modules/analytics/analytics.routes.js";
 import { subscriptionRoutes } from "./modules/subscription/subscription.routes.js";
 import { reportsRoutes } from "./modules/reports/reports.routes.js";
+import { notificationRoutes } from "./modules/notification/notification.routes.js";
 
 export const registerRoutes = (app) => {
   app.get("/health", (req, res) => {
@@ -20,4 +21,5 @@ export const registerRoutes = (app) => {
   app.use("/api/analytics", analyticsRoutes);
   app.use("/api/subscription", subscriptionRoutes);
   app.use("/api/reports", reportsRoutes);
+  app.use("/api/notifications", notificationRoutes);
 };

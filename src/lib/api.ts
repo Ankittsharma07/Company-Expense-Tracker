@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
@@ -105,6 +105,17 @@ export type Expense = {
     name: string;
     email: string;
   };
+};
+
+export type AppNotificationType = "INFO" | "SUCCESS" | "WARNING";
+
+export type AppNotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: AppNotificationType;
+  isRead: boolean;
+  createdAt: string;
 };
 
 export type MonthlyTotal = {
@@ -242,6 +253,22 @@ export const fetchPendingApprovals = () => {
 // Get approval counts for dashboard
 export const fetchApprovalCounts = () => {
   return apiFetch<{ pending: number }>("/api/approvals/counts");
+};
+
+// Notification API functions
+export const fetchNotifications = (limit?: number) => {
+  const query = limit ? `?limit=${limit}` : "";
+  return apiFetch<AppNotification[]>(`/api/notifications${query}`);
+};
+
+export const markNotificationRead = (id: string) => {
+  return apiFetch<AppNotification>(`/api/notifications/${id}/read`, {
+    method: "PATCH",
+  });
+};
+
+export const fetchUnreadNotificationCount = () => {
+  return apiFetch<{ unread: number }>("/api/notifications/unread-count");
 };
 
 // Approve expense (Manager or Admin)

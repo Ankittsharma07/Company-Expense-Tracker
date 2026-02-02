@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Search, ChevronDown, LogOut, User as UserIcon, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import {
+  fetchNotifications,
+  fetchUnreadNotificationCount,
+  markNotificationRead,
+  AppNotification,
+} from '../../lib/api';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -13,11 +24,52 @@ export const Navbar = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let isMounted = true;
+    let intervalId: number | undefined;
+
+    const refreshUnreadCount = async () => {
+      try {
+        const data = await fetchUnreadNotificationCount();
+        if (isMounted) {
+          setUnreadCount(data.unread);
+        }
+      } catch (error) {
+        console.error('Failed to load unread notification count:', error);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUnreadCount();
+      }
+    };
+
+    refreshUnreadCount();
+    intervalId = window.setInterval(refreshUnreadCount, 10000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
 
   if (!user) {
     return null;
@@ -25,6 +77,48 @@ export const Navbar = () => {
 
   const userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0d9488&color=fff`;
   const displayRole = user.role.toLowerCase();
+
+  const loadNotifications = async () => {
+    setIsNotificationsLoading(true);
+    try {
+      const [items, unread] = await Promise.all([
+        fetchNotifications(20),
+        fetchUnreadNotificationCount(),
+      ]);
+      setNotifications(items);
+      setUnreadCount(unread.unread);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setIsNotificationsLoading(false);
+    }
+  };
+
+  const handleNotificationToggle = async () => {
+    const next = !showNotifications;
+    setShowNotifications(next);
+    setShowDropdown(false);
+    if (next) {
+      await loadNotifications();
+    }
+  };
+
+  const handleMarkRead = async (notification: AppNotification) => {
+    if (notification.isRead) {
+      return;
+    }
+    try {
+      await markNotificationRead(notification.id);
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id ? { ...item, isRead: true } : item
+        )
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+    } catch (error) {
+      console.error('Failed to mark notification read:', error);
+    }
+  };
 
   return (
     <header className="h-16 bg-gradient-to-r from-white/85 via-white/75 to-white/65 backdrop-blur-2xl border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20 transition-all shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 ring-white/60">
@@ -45,10 +139,55 @@ export const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-6">
-        <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full bg-white/70 border border-slate-200/60 shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:bg-white">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-        </button>
+        <div className="relative" ref={notificationRef}>
+          <button
+            type="button"
+            onClick={handleNotificationToggle}
+            className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full bg-white/70 border border-slate-200/60 shadow-[0_8px_18px_rgba(15,23,42,0.06)] hover:bg-white"
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center ring-2 ring-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_24px_60px_rgba(15,23,42,0.18)] border border-slate-200/70 overflow-hidden z-50">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-900">Notifications</p>
+                <span className="text-xs text-slate-500">{unreadCount} unread</span>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {isNotificationsLoading && (
+                  <div className="px-4 py-6 text-sm text-slate-500">Loading notifications...</div>
+                )}
+                {!isNotificationsLoading && notifications.length === 0 && (
+                  <div className="px-4 py-6 text-sm text-slate-500">No notifications yet.</div>
+                )}
+                {!isNotificationsLoading &&
+                  notifications.map((notification) => (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      onClick={() => handleMarkRead(notification)}
+                      className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${
+                        notification.isRead ? 'bg-white' : 'bg-teal-50/60'
+                      } hover:bg-slate-50`}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{notification.title}</p>
+                      <p className="text-xs text-slate-600 mt-1">{notification.message}</p>
+                      <p className="text-[11px] text-slate-400 mt-2">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="h-6 w-px bg-slate-200/80" />
 

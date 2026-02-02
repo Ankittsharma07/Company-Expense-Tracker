@@ -35,6 +35,12 @@ enum ApprovalLevel {
   ADMIN
 }
 
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+}
+
 model Company {
   id        String   @id @default(cuid())
   name      String
@@ -60,6 +66,7 @@ model User {
   company      Company  @relation(fields: [companyId], references: [id])
   expenses     Expense[]
   approvals    Approval[] @relation("ApprovalsByUser")
+  notifications Notification[]
 
   @@index([companyId])
 }
@@ -106,4 +113,19 @@ model Approval {
   @@index([companyId])
   @@index([expenseId])
   @@index([approvedById])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, createdAt])
 }

@@ -1,4 +1,5 @@
 ﻿import { prisma } from "../../config/db.js";
+import { notifyAdminDecision, notifyManagerDecision } from "../../services/notifications/expenseNotifications.js";
 
 const buildApproval = ({ companyId, expenseId, approvedById, decision, level, comment }) => {
   return prisma.approval.create({
@@ -47,6 +48,17 @@ export const managerApproveService = async ({ companyId, expenseId, approvedById
     comment,
   });
 
+  try {
+    await notifyManagerDecision({
+      companyId,
+      expense,
+      decision,
+      comment,
+    });
+  } catch (notificationError) {
+    console.error("Manager approval notification failed:", notificationError.message);
+  }
+
   return updated;
 };
 
@@ -83,6 +95,17 @@ export const adminApproveService = async ({ companyId, expenseId, approvedById, 
     level: "ADMIN",
     comment,
   });
+
+  try {
+    await notifyAdminDecision({
+      companyId,
+      expense,
+      decision,
+      comment,
+    });
+  } catch (notificationError) {
+    console.error("Admin approval notification failed:", notificationError.message);
+  }
 
   return updated;
 };

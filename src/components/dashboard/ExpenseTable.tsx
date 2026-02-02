@@ -124,7 +124,9 @@ export const ExpenseTable = ({
               <td className="px-6 py-4 text-sm text-slate-500 font-mono">
                 {expense.expenseDate ? formatDate(expense.expenseDate) : '—'}
               </td>
-              <td className="px-6 py-4 font-semibold text-slate-900 text-sm">{formatCurrency(normalizeAmount(expense.amount))}</td>
+              <td className="px-6 py-4 font-semibold text-slate-900 text-sm">
+                {formatCurrency(normalizeAmount(expense.amount), expense.currency || 'USD')}
+              </td>
               <td className="px-6 py-4">
                 <Badge status={statusConfig.badge}>{statusConfig.label}</Badge>
               </td>

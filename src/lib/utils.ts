@@ -5,11 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const formatCurrency = (amount: number) => {
+export const formatCurrency = (amount: number, currency: string = "USD") => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
   }).format(amount);
+};
+
+export const getCurrencySymbol = (currency: string = "USD") => {
+  if (currency.toUpperCase() === "INR") {
+    return "₹";
+  }
+  if (currency.toUpperCase() === "USD") {
+    return "$";
+  }
+  return currency;
 };
 
 export const formatDate = (dateString: string) => {

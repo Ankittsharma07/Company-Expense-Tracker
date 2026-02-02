@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { CategoryTotal, MonthlyTotal } from '../../lib/api';
+import { formatCurrency, getCurrencySymbol } from '../../lib/utils';
 
 const monthLabel = (value: string) => {
   const date = new Date(value);
@@ -10,7 +11,7 @@ const monthLabel = (value: string) => {
   return date.toLocaleString('en-US', { month: 'short' });
 };
 
-export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
+export const SpendTrendChart = ({ data, currency = 'USD' }: { data: MonthlyTotal[]; currency?: string }) => {
   // Handle empty data
   if (!data || data.length === 0) {
     return (
@@ -71,9 +72,10 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
       },
       formatter: (params: any) => {
         const param = params[0];
+        const formattedValue = formatCurrency(Number(param.value || 0), currency);
         return `<div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); backdrop-filter: blur(12px); border-radius: 12px; box-shadow: 0 8px 32px rgba(102,126,234,0.15), 0 0 0 1px rgba(255,255,255,0.5); border: 1px solid rgba(168,85,247,0.2);">
           <div style="font-weight: 600; margin-bottom: 6px; color: #0f172a; font-size: 13px;">${param.name}</div>
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; font-size: 16px;">$${param.value.toLocaleString()}</div>
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; font-size: 16px;">${formattedValue}</div>
         </div>`;
       }
     },
@@ -108,10 +110,11 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
         color: '#94a3b8',
         fontSize: 12,
         formatter: (value: number) => {
+          const symbol = getCurrencySymbol(currency);
           if (value >= 1000) {
-            return `$${(value/1000).toFixed(1)}k`;
+            return `${symbol}${(value/1000).toFixed(1)}k`;
           }
-          return `$${value}`;
+          return `${symbol}${value}`;
         }
       },
     },
@@ -176,7 +179,7 @@ export const SpendTrendChart = ({ data }: { data: MonthlyTotal[] }) => {
   );
 };
 
-export const CategoryPieChart = ({ data }: { data: CategoryTotal[] }) => {
+export const CategoryPieChart = ({ data, currency = 'USD' }: { data: CategoryTotal[]; currency?: string }) => {
   // Handle empty data
   if (!data || data.length === 0) {
     return (
@@ -214,11 +217,12 @@ export const CategoryPieChart = ({ data }: { data: CategoryTotal[] }) => {
         return [left, top];
       },
       formatter: (params: any) => {
+        const formattedValue = formatCurrency(Number(params.value || 0), currency);
         return `<div style="padding: 12px 16px; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%); backdrop-filter: blur(12px); border-radius: 12px; box-shadow: 0 8px 32px rgba(15,23,42,0.12), 0 0 0 1px rgba(255,255,255,0.5); border: 1px solid rgba(148,163,184,0.2); min-width: 200px;">
           <div style="font-weight: 600; margin-bottom: 6px; color: #0f172a; font-size: 13px;">${params.name}</div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="width: 10px; height: 10px; border-radius: 50%; background: ${params.color};"></div>
-            <div style="font-weight: 700; font-size: 16px; color: #0f172a;">$${params.value.toLocaleString()}</div>
+            <div style="font-weight: 700; font-size: 16px; color: #0f172a;">${formattedValue}</div>
             <div style="color: #64748b; font-size: 12px;">(${params.percent}%)</div>
           </div>
         </div>`;

@@ -78,6 +78,10 @@ export const AdminDashboard = () => {
     return totalSpend / monthlyTotals.length;
   }, [monthlyTotals, totalSpend]);
 
+  const displayCurrency = useMemo(() => {
+    return expenses.find((expense) => expense.currency)?.currency || 'USD';
+  }, [expenses]);
+
   // Pending approvals count is now fetched from backend
 
   const activeEmployees = useMemo(() => {
@@ -218,7 +222,7 @@ export const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 stagger-children">
         <StatCard
           title="Total Spend"
-          value={isLoading ? '—' : formatCurrency(totalSpend)}
+          value={isLoading ? '—' : formatCurrency(totalSpend, displayCurrency)}
           icon={<DollarSign className="w-5 h-5" />}
           trend={{ value: 12.5, isPositive: true }}
         />
@@ -236,7 +240,7 @@ export const AdminDashboard = () => {
         />
         <StatCard
           title="Monthly Average"
-          value={isLoading ? '—' : formatCurrency(monthlyAverage)}
+          value={isLoading ? '—' : formatCurrency(monthlyAverage, displayCurrency)}
           icon={<TrendingUp className="w-5 h-5" />}
         />
       </div>
@@ -252,7 +256,7 @@ export const AdminDashboard = () => {
             ) : error ? (
               <div className="py-10 text-sm text-rose-600">{error}</div>
             ) : (
-              <SpendTrendChart data={monthlyTotals} />
+              <SpendTrendChart data={monthlyTotals} currency={displayCurrency} />
             )}
           </CardContent>
         </Card>
@@ -266,7 +270,7 @@ export const AdminDashboard = () => {
             ) : error ? (
               <div className="py-10 text-sm text-rose-600">{error}</div>
             ) : (
-              <CategoryPieChart data={categoryTotals} />
+              <CategoryPieChart data={categoryTotals} currency={displayCurrency} />
             )}
           </CardContent>
         </Card>

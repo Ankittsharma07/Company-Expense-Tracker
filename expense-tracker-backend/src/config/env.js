@@ -21,4 +21,10 @@ export const env = {
   cloudinaryCloudName: requireEnv("CLOUDINARY_CLOUD_NAME"),
   cloudinaryApiKey: requireEnv("CLOUDINARY_API_KEY"),
   cloudinaryApiSecret: requireEnv("CLOUDINARY_API_SECRET"),
+  smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
+  smtpPort: Number(process.env.SMTP_PORT || 465),
+  smtpSecure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : true,
+  smtpUser: process.env.SMTP_USER || "",
+  smtpPass: process.env.SMTP_PASS || "",
+  emailFrom: process.env.EMAIL_FROM || "Expense Tracker <no-reply@expense-tracker.com>",
 };

@@ -7,7 +7,7 @@ import { Modal } from '../components/ui/Modal';
 import { Plus, Wallet, Receipt } from 'lucide-react';
 import { createExpense, deleteExpense, fetchExpenses, updateExpense } from '../lib/api';
 import type { Expense } from '../lib/api';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, getCurrencySymbol } from '../lib/utils';
 
 export const EmployeeDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,6 +19,7 @@ export const EmployeeDashboard = () => {
     description: '',
     amount: '',
     date: '',
+    currency: 'USD',
     category: 'Travel',
     receiptFile: null as File | null,
     removeReceipt: false,
@@ -50,6 +51,10 @@ export const EmployeeDashboard = () => {
     return () => clearInterval(intervalId);
   }, [loadExpenses]);
 
+  const displayCurrency = useMemo(() => {
+    return expenses.find((expense) => expense.currency)?.currency || 'USD';
+  }, [expenses]);
+
   const totalSpend = useMemo(() => {
     return expenses
       .filter((expense) => expense.status !== 'REJECTED')
@@ -68,6 +73,7 @@ export const EmployeeDashboard = () => {
       description: '',
       amount: '',
       date: '',
+      currency: 'USD',
       category: 'Travel',
       receiptFile: null,
       removeReceipt: false,
@@ -88,6 +94,7 @@ export const EmployeeDashboard = () => {
       description: expense.description,
       amount: String(expense.amount ?? ''),
       date: expense.expenseDate ? new Date(expense.expenseDate).toISOString().split('T')[0] : '',
+      currency: expense.currency || 'USD',
       category: expense.category,
       receiptFile: null,
       removeReceipt: false,
@@ -120,6 +127,7 @@ export const EmployeeDashboard = () => {
           description: formState.description,
           category: formState.category,
           amount: amountValue,
+          currency: formState.currency,
           expenseDate: formState.date ? new Date(formState.date).toISOString() : undefined,
           receiptFile: formState.receiptFile,
           removeReceipt: formState.removeReceipt,
@@ -129,6 +137,7 @@ export const EmployeeDashboard = () => {
           description: formState.description,
           category: formState.category,
           amount: amountValue,
+          currency: formState.currency,
           expenseDate: formState.date ? new Date(formState.date).toISOString() : undefined,
           receiptFile: formState.receiptFile,
         });
@@ -157,12 +166,12 @@ export const EmployeeDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
         <StatCard
           title="My Spending (YTD)"
-          value={isLoading ? '—' : formatCurrency(totalSpend)}
+          value={isLoading ? '—' : formatCurrency(totalSpend, displayCurrency)}
           icon={<Wallet className="w-5 h-5" />}
         />
         <StatCard
           title="Pending Reimbursement"
-          value={isLoading ? '—' : formatCurrency(pendingReimbursement)}
+          value={isLoading ? '—' : formatCurrency(pendingReimbursement, displayCurrency)}
           icon={<Receipt className="w-5 h-5" />}
         />
       </div>
@@ -206,11 +215,11 @@ export const EmployeeDashboard = () => {
               placeholder="e.g. Client Lunch"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Amount</label>
               <div className="relative">
-                <span className="absolute left-3 top-2 text-slate-500">$</span>
+                <span className="absolute left-3 top-2 text-slate-500">{getCurrencySymbol(formState.currency)}</span>
                 <input
                   type="number"
                   value={formState.amount}
@@ -219,6 +228,17 @@ export const EmployeeDashboard = () => {
                   placeholder="0.00"
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
+              <select
+                value={formState.currency}
+                onChange={(e) => setFormState((prev) => ({ ...prev, currency: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 shadow-[0_6px_16px_rgba(15,23,42,0.06)]"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="INR">INR (₹)</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
