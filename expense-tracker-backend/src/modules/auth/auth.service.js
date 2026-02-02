@@ -34,6 +34,7 @@ export const signupService = async ({ companyName, name, email, password }) => {
       email: user.email,
       role: user.role,
       companyId: user.companyId,
+      avatarUrl: user.avatarUrl || null,
     },
     company: {
       id: company.id,
@@ -68,6 +69,7 @@ export const loginService = async ({ email, password }) => {
       email: user.email,
       role: user.role,
       companyId: user.companyId,
+      avatarUrl: user.avatarUrl || null,
     },
     company: {
       id: user.company.id,

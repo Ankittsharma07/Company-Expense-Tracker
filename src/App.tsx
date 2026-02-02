@@ -12,6 +12,8 @@ import { EmployeeDashboard } from './pages/EmployeeDashboard';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { TeamPage } from './pages/TeamPage';
 import ApprovalsPage from './pages/ApprovalsPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 // Component to route based on role
 const DashboardRouter = () => {
@@ -57,7 +59,9 @@ function App() {
             <Route index element={<DashboardRouter />} />
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="team" element={<TeamPage />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="subscription" element={<SubscriptionPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

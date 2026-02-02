@@ -30,3 +30,24 @@ export const getUnreadCountService = async ({ userId }) => {
   });
   return { unread: count };
 };
+
+export const listNotificationAuditLogsService = async ({ companyId, limit = 50 }) => {
+  const take = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  return prisma.notificationAuditLog.findMany({
+    where: {
+      user: { companyId },
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    },
+  });
+};

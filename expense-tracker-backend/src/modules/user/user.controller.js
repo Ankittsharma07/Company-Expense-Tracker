@@ -1,5 +1,13 @@
 ﻿import { z } from "zod";
-import { createUserService, listUsersService, getMeService, updateRoleService } from "./user.service.js";
+import {
+  createUserService,
+  listUsersService,
+  getMeService,
+  updateRoleService,
+  updateNotificationPreferencesService,
+  updateUserProfileService,
+} from "./user.service.js";
+import { uploadAvatar as uploadAvatarToCloudinary } from "../../services/storage/avatarStorage.js";
 
 const createUserSchema = z.object({
   name: z.string().min(2),
@@ -10,6 +18,16 @@ const createUserSchema = z.object({
 
 const updateRoleSchema = z.object({
   role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"]),
+});
+
+const updateUserSchema = z.object({
+  name: z.string().min(2).optional(),
+  email: z.string().email().optional(),
+});
+
+const updatePreferencesSchema = z.object({
+  emailNotificationsEnabled: z.boolean().optional(),
+  inAppNotificationsEnabled: z.boolean().optional(),
 });
 
 export const createUser = async (req, res) => {
@@ -48,5 +66,67 @@ export const updateRole = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
     return res.status(400).json({ message: error.message || "Failed to update role" });
+  }
+};
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const payload = updateUserSchema.parse(req.body);
+    if (!payload.name && !payload.email) {
+      return res.status(400).json({ message: "No updates provided" });
+    }
+    const user = await updateUserProfileService(req.user.companyId, req.params.id, payload);
+    return res.json(user);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation failed", errors: error.errors });
+    }
+    return res.status(400).json({ message: error.message || "Failed to update user" });
+  }
+};
+
+export const updateMyAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Avatar file is required" });
+    }
+
+    const uploadResult = await uploadAvatarToCloudinary({
+      buffer: req.file.buffer,
+      mimeType: req.file.mimetype,
+      companyId: req.user.companyId,
+      userId: req.user.id,
+      originalName: req.file.originalname,
+    });
+
+    const user = await updateUserProfileService(req.user.companyId, req.user.id, {
+      name: undefined,
+      email: undefined,
+      avatarUrl: uploadResult.url,
+    });
+
+    return res.json(user);
+  } catch (error) {
+    return res.status(400).json({ message: error.message || "Failed to update avatar" });
+  }
+};
+
+export const updateMyNotificationPreferences = async (req, res) => {
+  try {
+    const payload = updatePreferencesSchema.parse(req.body);
+    if (payload.emailNotificationsEnabled === undefined && payload.inAppNotificationsEnabled === undefined) {
+      return res.status(400).json({ message: "No preference changes provided" });
+    }
+    const user = await updateNotificationPreferencesService({
+      companyId: req.user.companyId,
+      userId: req.user.id,
+      data: payload,
+    });
+    return res.json(user);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation failed", errors: error.errors });
+    }
+    return res.status(400).json({ message: error.message || "Failed to update preferences" });
   }
 };

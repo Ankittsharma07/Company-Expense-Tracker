@@ -23,6 +23,9 @@ export const createUserService = async (companyId, { name, email, password, role
       email: true,
       role: true,
       companyId: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
+      avatarUrl: true,
       createdAt: true,
     },
   });
@@ -36,6 +39,9 @@ export const listUsersService = async (companyId) => {
       name: true,
       email: true,
       role: true,
+      avatarUrl: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
       createdAt: true,
     },
     orderBy: { createdAt: "desc" },
@@ -51,6 +57,9 @@ export const getMeService = async (userId, companyId) => {
       email: true,
       role: true,
       companyId: true,
+      avatarUrl: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
       createdAt: true,
     },
   });
@@ -74,6 +83,59 @@ export const updateRoleService = async (companyId, userId, role) => {
       email: true,
       role: true,
       companyId: true,
+      avatarUrl: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
+      createdAt: true,
+    },
+  });
+};
+
+export const updateUserProfileService = async (companyId, userId, data) => {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, companyId },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: data.name ?? user.name,
+      email: data.email ?? user.email,
+      avatarUrl: data.avatarUrl ?? user.avatarUrl,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      companyId: true,
+      avatarUrl: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
+      createdAt: true,
+    },
+  });
+};
+export const updateNotificationPreferencesService = async ({ companyId, userId, data }) => {
+  return prisma.user.update({
+    where: { id: userId, companyId },
+    data: {
+      emailNotificationsEnabled: data.emailNotificationsEnabled,
+      inAppNotificationsEnabled: data.inAppNotificationsEnabled,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      companyId: true,
+      avatarUrl: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
       createdAt: true,
     },
   });

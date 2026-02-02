@@ -3,9 +3,14 @@ import {
   listNotificationsService,
   markNotificationReadService,
   getUnreadCountService,
+  listNotificationAuditLogsService,
 } from "./notification.service.js";
 
 const listSchema = z.object({
+  limit: z.string().optional(),
+});
+
+const auditListSchema = z.object({
   limit: z.string().optional(),
 });
 
@@ -45,5 +50,21 @@ export const getUnreadCount = async (req, res) => {
     return res.json(count);
   } catch (error) {
     return res.status(500).json({ message: error.message || "Failed to fetch unread count" });
+  }
+};
+
+export const listNotificationAuditLogs = async (req, res) => {
+  try {
+    const payload = auditListSchema.parse(req.query);
+    const logs = await listNotificationAuditLogsService({
+      companyId: req.user.companyId,
+      limit: payload.limit,
+    });
+    return res.json(logs);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation failed", errors: error.errors });
+    }
+    return res.status(500).json({ message: error.message || "Failed to fetch audit logs" });
   }
 };

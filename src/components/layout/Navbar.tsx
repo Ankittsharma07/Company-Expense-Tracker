@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Search, ChevronDown, LogOut, User as UserIcon, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { resolveAvatarUrl } from '../../lib/avatar';
+import { RoleBadge } from '../ui/RoleBadge';
 import {
   fetchNotifications,
   fetchUnreadNotificationCount,
@@ -75,8 +77,7 @@ export const Navbar = () => {
     return null;
   }
 
-  const userAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0d9488&color=fff`;
-  const displayRole = user.role.toLowerCase();
+  const userAvatar = resolveAvatarUrl(user.avatarUrl || null, user.email);
 
   const loadNotifications = async () => {
     setIsNotificationsLoading(true);
@@ -206,7 +207,9 @@ export const Navbar = () => {
             </div>
             <div className="hidden sm:block text-left">
               <p className="text-sm font-semibold text-slate-900 leading-none group-hover:text-teal-700 transition-colors">{user.name}</p>
-              <p className="text-xs text-slate-500 capitalize mt-1">{displayRole}</p>
+              <div className="mt-1">
+                <RoleBadge role={user.role} />
+              </div>
             </div>
             <ChevronDown className={`w-4 h-4 text-slate-400 hidden sm:block group-hover:text-slate-600 transition-all ${showDropdown ? 'rotate-180' : ''}`} />
           </div>
@@ -215,7 +218,10 @@ export const Navbar = () => {
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-[0_20px_60px_rgba(15,23,42,0.15)] border border-slate-200/60 py-2 z-50">
               <div className="px-4 py-3 border-b border-slate-100">
-                <p className="text-sm font-semibold text-slate-900">{user.name}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-900">{user.name}</p>
+                  <RoleBadge role={user.role} />
+                </div>
                 <p className="text-xs text-slate-500 mt-0.5">{user.email}</p>
               </div>
 

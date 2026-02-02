@@ -92,6 +92,7 @@ export const notifyExpenseSubmitted = async ({ companyId, expenseId }) => {
         message: managerMessage,
         type: "INFO",
         emailTemplate: managerEmailTemplate,
+        notificationType: "EXPENSE_SUBMITTED",
       })
     );
   }
@@ -105,6 +106,7 @@ export const notifyExpenseSubmitted = async ({ companyId, expenseId }) => {
         message: adminMessage,
         type: "INFO",
         emailTemplate: adminEmailTemplate,
+        notificationType: "EXPENSE_SUBMITTED",
       })
     );
   }
@@ -136,6 +138,7 @@ export const notifyManagerDecision = async ({ companyId, expense, decision, comm
     message,
     type,
     emailTemplate,
+    notificationType: "MANAGER_DECISION",
   });
 };
 
@@ -163,6 +166,7 @@ export const notifyAdminDecision = async ({ companyId, expense, decision, commen
     message: employeeMessage,
     type: employeeType,
     emailTemplate: employeeEmailTemplate,
+    notificationType: "ADMIN_DECISION",
   });
 
   const managerApproval = await prisma.approval.findFirst({
@@ -196,5 +200,6 @@ export const notifyAdminDecision = async ({ companyId, expense, decision, commen
     message: managerMessage,
     type: managerType,
     emailTemplate: managerEmailTemplate,
+    notificationType: "ADMIN_DECISION",
   });
 };

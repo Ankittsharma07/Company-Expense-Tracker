@@ -33,6 +33,7 @@ export const sendNotification = async ({
   message,
   type = "INFO",
   emailTemplate,
+  notificationType = "GENERAL",
 }) => {
   const user = await prisma.user.findFirst({
     where: {
@@ -42,6 +43,9 @@ export const sendNotification = async ({
     select: {
       id: true,
       email: true,
+      role: true,
+      emailNotificationsEnabled: true,
+      inAppNotificationsEnabled: true,
     },
   });
 
@@ -49,23 +53,69 @@ export const sendNotification = async ({
     return null;
   }
 
-  const notification = await prisma.notification.create({
-    data: {
-      userId: user.id,
-      title,
-      message,
-      type,
-    },
-  });
+  const createAuditLog = async ({ channel, status, reason }) => {
+    try {
+      await prisma.notificationAuditLog.create({
+        data: {
+          userId: user.id,
+          userRole: user.role,
+          notificationType,
+          channel,
+          status,
+          reason: reason || null,
+        },
+      });
+    } catch (auditError) {
+      console.error("Notification audit log failed:", auditError.message);
+    }
+  };
+
+  let notification = null;
+  if (user.inAppNotificationsEnabled) {
+    try {
+      notification = await prisma.notification.create({
+        data: {
+          userId: user.id,
+          title,
+          message,
+          type,
+        },
+      });
+      await createAuditLog({ channel: "IN_APP", status: "SENT" });
+    } catch (error) {
+      await createAuditLog({ channel: "IN_APP", status: "FAILED", reason: error.message });
+    }
+  } else {
+    await createAuditLog({ channel: "IN_APP", status: "SKIPPED", reason: "User disabled in-app" });
+  }
 
   const resolvedTemplate = normalizeEmailTemplate({ title, message, emailTemplate });
-  if (resolvedTemplate && user.email) {
-    await sendEmail({
+  if (!resolvedTemplate) {
+    await createAuditLog({ channel: "EMAIL", status: "SKIPPED", reason: "Email template not provided" });
+    return notification;
+  }
+
+  if (!user.emailNotificationsEnabled) {
+    await createAuditLog({ channel: "EMAIL", status: "SKIPPED", reason: "User disabled email" });
+    return notification;
+  }
+
+  try {
+    const result = await sendEmail({
       to: user.email,
       subject: resolvedTemplate.subject,
       html: resolvedTemplate.html,
       text: resolvedTemplate.text,
     });
+    if (result?.skipped) {
+      await createAuditLog({ channel: "EMAIL", status: "FAILED", reason: "SMTP not configured" });
+    } else if (result?.error) {
+      await createAuditLog({ channel: "EMAIL", status: "FAILED", reason: result.error.message });
+    } else {
+      await createAuditLog({ channel: "EMAIL", status: "SENT" });
+    }
+  } catch (error) {
+    await createAuditLog({ channel: "EMAIL", status: "FAILED", reason: error.message });
   }
 
   return notification;
@@ -78,6 +128,7 @@ export const sendBulkNotifications = async ({
   message,
   type = "INFO",
   emailTemplate,
+  notificationType = "GENERAL",
 }) => {
   const tasks = userIds.map((userId) =>
     sendNotification({
@@ -87,6 +138,7 @@ export const sendBulkNotifications = async ({
       message,
       type,
       emailTemplate,
+      notificationType,
     })
   );
 

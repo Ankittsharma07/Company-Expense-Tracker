@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4010";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
@@ -81,6 +81,9 @@ export type ApiUser = {
   email: string;
   role: string;
   companyId: string;
+  avatarUrl?: string | null;
+  emailNotificationsEnabled?: boolean;
+  inAppNotificationsEnabled?: boolean;
 };
 
 // Expense status enum matching backend
@@ -140,6 +143,13 @@ export const createUser = (payload: {
 }) => {
   return apiFetch<ApiUser>("/api/users", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const updateUser = (id: string, payload: { name?: string; email?: string }) => {
+  return apiFetch<ApiUser>(`/api/users/${id}`, {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 };
@@ -359,6 +369,7 @@ export type AuthResponse = {
     email: string;
     role: string;
     companyId: string;
+    avatarUrl?: string | null;
   };
   company: {
     id: string;
@@ -391,5 +402,14 @@ export const signup = async (payload: SignupPayload): Promise<AuthResponse> => {
   return apiFetch<AuthResponse>("/api/auth/signup", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+};
+
+export const uploadMyAvatar = (file: File) => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  return apiFetch<ApiUser>("/api/users/me/avatar", {
+    method: "POST",
+    body: formData,
   });
 };

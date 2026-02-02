@@ -3,8 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
-import { Plus, Mail, Calendar, Shield } from 'lucide-react';
-import { createUser, fetchUsers } from '../lib/api';
+import { Plus, Mail, Calendar, Shield, Pencil } from 'lucide-react';
+import { createUser, fetchUsers, updateUser } from '../lib/api';
 import type { ApiUser } from '../lib/api';
 import { formatDate } from '../lib/utils';
 
@@ -13,11 +13,17 @@ export const TeamPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<ApiUser | null>(null);
   const [formState, setFormState] = useState({
     name: '',
     email: '',
     password: '',
     role: 'EMPLOYEE' as 'MANAGER' | 'EMPLOYEE',
+  });
+  const [editFormState, setEditFormState] = useState({
+    name: '',
+    email: '',
   });
 
   const loadUsers = useCallback(async () => {
@@ -55,10 +61,28 @@ export const TeamPage = () => {
     });
   };
 
+  const resetEditForm = () => {
+    setEditFormState({
+      name: '',
+      email: '',
+    });
+    setEditingUser(null);
+  };
+
   const openNewUser = () => {
     setError(null);
     resetForm();
     setIsModalOpen(true);
+  };
+
+  const openEditUser = (user: ApiUser) => {
+    setError(null);
+    setEditingUser(user);
+    setEditFormState({
+      name: user.name,
+      email: user.email,
+    });
+    setIsEditModalOpen(true);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -87,6 +111,33 @@ export const TeamPage = () => {
       await loadUsers();
     } catch (err) {
       const errMessage = err instanceof Error ? err.message : 'Failed to create user.';
+      setError(errMessage);
+    }
+  };
+
+  const handleEditSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!editingUser) {
+      return;
+    }
+
+    if (!editFormState.name || !editFormState.email) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    try {
+      await updateUser(editingUser.id, {
+        name: editFormState.name,
+        email: editFormState.email,
+      });
+      setIsEditModalOpen(false);
+      resetEditForm();
+      await loadUsers();
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Failed to update user.';
       setError(errMessage);
     }
   };
@@ -132,6 +183,7 @@ export const TeamPage = () => {
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
@@ -162,6 +214,16 @@ export const TeamPage = () => {
                           <Calendar className="w-4 h-4 text-slate-400" />
                           {formatDate(user.createdAt)}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-slate-500 hover:text-slate-700"
+                          onClick={() => openEditUser(user)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -260,7 +322,66 @@ export const TeamPage = () => {
           </div>
         </form>
       </Modal>
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          resetEditForm();
+          setError(null);
+        }}
+        title="Edit User"
+      >
+        <form className="space-y-4" onSubmit={handleEditSubmit}>
+          {error && (
+            <div className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3">
+              {error}
+            </div>
+          )}
+          <div>
+            <label htmlFor="edit-name" className="block text-sm font-medium text-slate-700 mb-2">
+              Full Name
+            </label>
+            <input
+              id="edit-name"
+              type="text"
+              value={editFormState.name}
+              onChange={(e) => setEditFormState((prev) => ({ ...prev, name: e.target.value }))}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="edit-email" className="block text-sm font-medium text-slate-700 mb-2">
+              Email Address
+            </label>
+            <input
+              id="edit-email"
+              type="email"
+              value={editFormState.email}
+              onChange={(e) => setEditFormState((prev) => ({ ...prev, email: e.target.value }))}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              placeholder="john@company.com"
+              required
+            />
+          </div>
+          <div className="pt-4 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                resetEditForm();
+                setError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">Save Changes</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
-

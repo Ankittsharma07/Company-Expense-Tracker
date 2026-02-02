@@ -10,6 +10,7 @@ export interface User {
   email: string;
   role: Role;
   companyId: string;
+  avatarUrl?: string | null;
 }
 
 export interface Company {
@@ -26,6 +27,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (companyName: string, name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
   error: string | null;
   clearError: () => void;
 }
@@ -46,6 +48,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setCompany(null);
     navigate('/login', { replace: true });
+  };
+
+  const updateUser = (updates: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
   };
 
   // Set up 401 handler
@@ -75,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: userData.email,
           role: userData.role as Role,
           companyId: userData.companyId,
+          avatarUrl: userData.avatarUrl || null,
         });
         // Note: fetchMe doesn't return company info, so we'll set it from login/signup
         // or fetch it separately if needed
@@ -118,6 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: response.user.email,
         role: response.user.role as Role,
         companyId: response.user.companyId,
+        avatarUrl: response.user.avatarUrl || null,
       });
       setCompany(response.company);
       
@@ -148,6 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: response.user.email,
         role: response.user.role as Role,
         companyId: response.user.companyId,
+        avatarUrl: response.user.avatarUrl || null,
       });
       setCompany(response.company);
       
@@ -170,6 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     signup,
     logout,
+    updateUser,
     error,
     clearError,
   };
@@ -184,4 +194,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
