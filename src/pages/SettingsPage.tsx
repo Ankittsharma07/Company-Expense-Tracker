@@ -15,7 +15,11 @@ export const SettingsPage = () => {
 
   const currentAvatar = useMemo(() => {
     if (!user) return '';
-    return resolveAvatarUrl(user.avatarUrl || null, user.email);
+    return resolveAvatarUrl(
+      user.avatarUrl || null,
+      user.googleAvatarUrl || null,
+      user.email
+    );
   }, [user]);
 
   if (!user) {
