@@ -1,5 +1,5 @@
 ﻿import { z } from "zod";
-import { signupService, loginService } from "./auth.service.js";
+import { signupService, loginService, googleLoginService } from "./auth.service.js";
 
 const signupSchema = z.object({
   companyName: z.string().min(2),
@@ -11,6 +11,10 @@ const signupSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
+});
+
+const googleLoginSchema = z.object({
+  token: z.string().min(1),
 });
 
 export const signup = async (req, res) => {
@@ -36,5 +40,18 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
     return res.status(401).json({ message: error.message || "Invalid credentials" });
+  }
+};
+
+export const googleLogin = async (req, res) => {
+  try {
+    const payload = googleLoginSchema.parse(req.body);
+    const result = await googleLoginService(payload.token);
+    return res.json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation failed", errors: error.errors });
+    }
+    return res.status(401).json({ message: error.message || "Google Login failed" });
   }
 };

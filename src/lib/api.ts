@@ -82,6 +82,7 @@ export type ApiUser = {
   role: string;
   companyId: string;
   avatarUrl?: string | null;
+  googleAvatarUrl?: string | null;
   emailNotificationsEnabled?: boolean;
   inAppNotificationsEnabled?: boolean;
 };
@@ -370,6 +371,7 @@ export type AuthResponse = {
     role: string;
     companyId: string;
     avatarUrl?: string | null;
+    googleAvatarUrl?: string | null;
   };
   company: {
     id: string;
@@ -402,6 +404,13 @@ export const signup = async (payload: SignupPayload): Promise<AuthResponse> => {
   return apiFetch<AuthResponse>("/api/auth/signup", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+};
+
+export const googleLogin = async (token: string): Promise<AuthResponse> => {
+  return apiFetch<AuthResponse>("/api/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ token }),
   });
 };
 

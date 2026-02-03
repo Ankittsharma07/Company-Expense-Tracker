@@ -11,6 +11,7 @@ export interface User {
   role: Role;
   companyId: string;
   avatarUrl?: string | null;
+  googleAvatarUrl?: string | null;
 }
 
 export interface Company {
@@ -26,6 +27,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (companyName: string, name: string, email: string, password: string) => Promise<void>;
+  googleLogin: (token: string) => Promise<void>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   error: string | null;
@@ -82,6 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role: userData.role as Role,
           companyId: userData.companyId,
           avatarUrl: userData.avatarUrl || null,
+          googleAvatarUrl: userData.googleAvatarUrl || null,
         });
         // Note: fetchMe doesn't return company info, so we'll set it from login/signup
         // or fetch it separately if needed
@@ -114,10 +117,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setError(null);
       setIsLoading(true);
       const response = await api.login({ email, password });
-      
+
       // Store token
       api.setAuthToken(response.token);
-      
+
       // Set user and company
       setUser({
         id: response.user.id,
@@ -126,9 +129,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: response.user.role as Role,
         companyId: response.user.companyId,
         avatarUrl: response.user.avatarUrl || null,
+        googleAvatarUrl: response.user.googleAvatarUrl || null,
       });
       setCompany(response.company);
-      
+
       // Navigate to dashboard
       navigate('/dashboard', { replace: true });
     } catch (err) {
@@ -145,10 +149,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setError(null);
       setIsLoading(true);
       const response = await api.signup({ companyName, name, email, password });
-      
+
       // Store token
       api.setAuthToken(response.token);
-      
+
       // Set user and company
       setUser({
         id: response.user.id,
@@ -157,13 +161,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: response.user.role as Role,
         companyId: response.user.companyId,
         avatarUrl: response.user.avatarUrl || null,
+        googleAvatarUrl: response.user.googleAvatarUrl || null,
       });
       setCompany(response.company);
-      
+
       // Navigate to dashboard
       navigate('/dashboard', { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const googleLogin = async (token: string) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const response = await api.googleLogin(token);
+
+      // Store token
+      api.setAuthToken(response.token);
+
+      // Set user and company
+      setUser({
+        id: response.user.id,
+        name: response.user.name,
+        email: response.user.email,
+        role: response.user.role as Role,
+        companyId: response.user.companyId,
+        avatarUrl: response.user.avatarUrl || null,
+        googleAvatarUrl: response.user.googleAvatarUrl || null,
+      });
+      setCompany(response.company);
+
+      // Navigate to dashboard
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Google Login failed';
       setError(message);
       throw err;
     } finally {
@@ -178,6 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     login,
     signup,
+    googleLogin,
     logout,
     updateUser,
     error,

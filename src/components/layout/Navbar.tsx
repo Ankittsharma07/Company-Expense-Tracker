@@ -77,7 +77,11 @@ export const Navbar = () => {
     return null;
   }
 
-  const userAvatar = resolveAvatarUrl(user.avatarUrl || null, user.email);
+  const userAvatar = resolveAvatarUrl(
+    user.avatarUrl || null,
+    user.googleAvatarUrl || null,
+    user.email
+  );
 
   const loadNotifications = async () => {
     setIsNotificationsLoading(true);
@@ -132,7 +136,7 @@ export const Navbar = () => {
             className="w-full pl-10 pr-12 py-2 text-sm border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 focus:bg-white transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(15,23,42,0.08)]"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-             <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-slate-200/70 bg-slate-50 px-1.5 font-mono text-[10px] font-medium text-slate-500 opacity-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-slate-200/70 bg-slate-50 px-1.5 font-mono text-[10px] font-medium text-slate-500 opacity-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <span className="text-xs">⌘</span>K
             </kbd>
           </div>
@@ -174,9 +178,8 @@ export const Navbar = () => {
                       key={notification.id}
                       type="button"
                       onClick={() => handleMarkRead(notification)}
-                      className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${
-                        notification.isRead ? 'bg-white' : 'bg-teal-50/60'
-                      } hover:bg-slate-50`}
+                      className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${notification.isRead ? 'bg-white' : 'bg-teal-50/60'
+                        } hover:bg-slate-50`}
                     >
                       <p className="text-sm font-semibold text-slate-900">{notification.title}</p>
                       <p className="text-xs text-slate-600 mt-1">{notification.message}</p>

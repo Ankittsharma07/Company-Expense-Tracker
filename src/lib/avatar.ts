@@ -154,9 +154,16 @@ export const getGravatarUrl = (email: string, size = 128, style = "identicon") =
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=${style}`;
 };
 
-export const resolveAvatarUrl = (avatarUrl: string | null | undefined, email: string) => {
+export const resolveAvatarUrl = (
+  avatarUrl: string | null | undefined,
+  googleAvatarUrl: string | null | undefined,
+  email: string
+) => {
   if (avatarUrl) {
     return avatarUrl;
+  }
+  if (googleAvatarUrl) {
+    return googleAvatarUrl;
   }
   return getGravatarUrl(email);
 };
