@@ -24,6 +24,7 @@ export const setUnauthorizedHandler = (handler: () => void) => {
 const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const token = getAuthToken();
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const isAuthEndpoint = path.startsWith("/api/auth/");
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string>),
@@ -45,20 +46,20 @@ const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> 
     });
     clearTimeout(timeoutId);
 
-    if (response.status === 401) {
-      // Clear token and trigger logout
-      clearAuthToken();
-      if (onUnauthorized) {
-        onUnauthorized();
-      }
-      throw new Error("Session expired. Please login again.");
-    }
-
     let payload: any = null;
     try {
       payload = await response.json();
     } catch (error) {
       payload = null;
+    }
+
+    if (response.status === 401 && !isAuthEndpoint) {
+      // Clear token and trigger logout for protected endpoints
+      clearAuthToken();
+      if (onUnauthorized) {
+        onUnauthorized();
+      }
+      throw new Error("Session expired. Please login again.");
     }
 
     if (!response.ok) {
@@ -282,6 +283,53 @@ export const fetchUnreadNotificationCount = () => {
   return apiFetch<{ unread: number }>("/api/notifications/unread-count");
 };
 
+// Notification Audit Log types
+export type NotificationAuditLog = {
+  id: string;
+  userId: string;
+  userRole: string;
+  notificationType: string;
+  channel: string;
+  status: string;
+  reason?: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+};
+
+export type NotificationAuditResponse = {
+  logs: NotificationAuditLog[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+// Fetch notification audit logs
+export const fetchNotificationAuditLogs = (params: {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  channel?: string;
+  status?: string;
+} = {}) => {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      search.append(key, String(value));
+    }
+  });
+  const query = search.toString();
+  return apiFetch<NotificationAuditResponse>(`/api/notification-audit${query ? `?${query}` : ""}`);
+};
+
+
 // Approve expense (Manager or Admin)
 export const approveExpenseById = (expenseId: string, role: "MANAGER" | "ADMIN", comment?: string) => {
   const level = role === "MANAGER" ? "manager" : "admin";
@@ -392,6 +440,15 @@ export type SignupPayload = {
   password: string;
 };
 
+export type PasswordResetRequest = {
+  email: string;
+};
+
+export type PasswordResetPayload = {
+  token: string;
+  password: string;
+};
+
 // Auth API functions
 export const login = async (payload: LoginPayload): Promise<AuthResponse> => {
   return apiFetch<AuthResponse>("/api/auth/login", {
@@ -411,6 +468,26 @@ export const googleLogin = async (token: string): Promise<AuthResponse> => {
   return apiFetch<AuthResponse>("/api/auth/google", {
     method: "POST",
     body: JSON.stringify({ token }),
+  });
+};
+
+export const requestPasswordReset = async (payload: PasswordResetRequest) => {
+  return apiFetch<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const resetPassword = async (payload: PasswordResetPayload) => {
+  return apiFetch<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const adminResetUserPassword = async (userId: string) => {
+  return apiFetch<{ message: string }>(`/api/admin/users/${userId}/reset-password`, {
+    method: "POST",
   });
 };
 

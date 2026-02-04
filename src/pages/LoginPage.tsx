@@ -8,7 +8,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, googleLogin, error, clearError, isLoading } = useAuth();
+  const { login, googleLogin, error, clearError, isLoading, setError } = useAuth();
 
   const googleLoginAction = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -18,19 +18,30 @@ export const LoginPage = () => {
         // Error is handled by AuthContext
       }
     },
-    onError: () => console.log('Login Failed'),
+    onError: (errorResponse) => {
+      console.error('Google Login Error:', errorResponse);
+      const errorMessage = errorResponse.error_description || errorResponse.error || 'Google login failed';
+      setError(errorMessage);
+    },
   });
 
   useEffect(() => {
     // Clear any previous errors when component mounts
     clearError();
-  }, [clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  useEffect(() => {
+    console.log('LoginPage - Error state changed:', error);
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('LoginPage - Attempting login...');
     try {
       await login(email, password);
     } catch (err) {
+      console.log('LoginPage - Login error caught:', err);
       // Error is handled by AuthContext
     }
   };
@@ -91,69 +102,74 @@ export const LoginPage = () => {
               <span className="px-4 bg-white/0 backdrop-blur-sm text-slate-500">Or continue with email</span>
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                Email address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-premium-purple-500/25 focus:border-premium-purple-500 transition-all"
+                  placeholder="you@company.com"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-premium-purple-500/25 focus:border-premium-purple-500 transition-all"
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="mt-2 text-right">
+                <Link to="/forgot-password" className="text-xs font-medium text-slate-500 hover:text-premium-purple-600 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full h-12 text-base"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </form>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-              Email address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-premium-purple-500/25 focus:border-premium-purple-500 transition-all"
-                placeholder="you@company.com"
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-premium-purple-500/25 focus:border-premium-purple-500 transition-all"
-                placeholder="••••••••"
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full h-12 text-base"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
 
         {/* Divider */}
         <div className="relative my-6">
@@ -182,4 +198,3 @@ export const LoginPage = () => {
     </div>
   );
 };
-

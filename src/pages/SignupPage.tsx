@@ -10,7 +10,7 @@ export const SignupPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signup, googleLogin, error, clearError, isLoading } = useAuth();
+  const { signup, googleLogin, error, clearError, isLoading, setError } = useAuth();
 
   const googleLoginAction = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -20,7 +20,11 @@ export const SignupPage = () => {
         // Error is handled by AuthContext
       }
     },
-    onError: () => console.log('Login Failed'),
+    onError: (errorResponse) => {
+      console.error('Google Login Error:', errorResponse);
+      const errorMessage = errorResponse.error_description || errorResponse.error || 'Google login failed';
+      setError(errorMessage);
+    },
   });
 
   useEffect(() => {

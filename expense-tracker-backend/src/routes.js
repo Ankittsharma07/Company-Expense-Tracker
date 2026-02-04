@@ -7,6 +7,8 @@ import { analyticsRoutes } from "./modules/analytics/analytics.routes.js";
 import { subscriptionRoutes } from "./modules/subscription/subscription.routes.js";
 import { reportsRoutes } from "./modules/reports/reports.routes.js";
 import { notificationRoutes } from "./modules/notification/notification.routes.js";
+import notificationAuditRoutes from "./modules/notification-audit/notification-audit.routes.js";
+import { adminRoutes } from "./modules/admin/admin.routes.js";
 
 export const registerRoutes = (app) => {
   app.get("/health", (req, res) => {
@@ -22,4 +24,6 @@ export const registerRoutes = (app) => {
   app.use("/api/subscription", subscriptionRoutes);
   app.use("/api/reports", reportsRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/notification-audit", notificationAuditRoutes);
+  app.use("/api/admin", adminRoutes);
 };

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../lib/api';
 
@@ -31,6 +31,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   error: string | null;
+  setError: (error: string | null) => void;
   clearError: () => void;
 }
 
@@ -219,6 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     updateUser,
     error,
+    setError,
     clearError,
   };
 

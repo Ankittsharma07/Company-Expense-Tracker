@@ -75,6 +75,8 @@ export const SettingsPage = () => {
               <img
                 src={previewUrl || currentAvatar}
                 alt={user.name}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
                 className="w-20 h-20 rounded-full object-cover border border-slate-200 shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
               />
             </div>

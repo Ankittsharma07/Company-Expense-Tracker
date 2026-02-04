@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,7 +8,8 @@ import {
   FileText,
   Building2,
   LogOut,
-  Hexagon
+  Hexagon,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../lib/utils';
@@ -29,6 +29,7 @@ export const Sidebar = () => {
     { name: 'Approvals', to: '/dashboard/approvals', icon: FileText, roles: ['manager', 'admin'] },
     { name: 'Team', to: '/dashboard/team', icon: Users, roles: ['admin', 'manager'] },
     { name: 'Reports', to: '/dashboard/reports', icon: PieChart, roles: ['admin'] },
+    { name: 'Audit Logs', to: '/dashboard/notification-audit', icon: Bell, roles: ['admin'] },
     { name: 'Subscription', to: '/dashboard/subscription', icon: Building2, roles: ['admin'] },
     { name: 'Settings', to: '/dashboard/settings', icon: Settings, roles: ['admin', 'manager', 'employee'] },
   ];

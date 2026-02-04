@@ -20,7 +20,7 @@ const getTransporter = () => {
   return transporter;
 };
 
-export const sendEmail = async ({ to, subject, html, text }) => {
+export const sendEmail = async ({ to, subject, html, text, headers }) => {
   if (!isEmailConfigured()) {
     console.warn("Email skipped: SMTP not configured.");
     return { skipped: true };
@@ -33,6 +33,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
       subject,
       html,
       text,
+      headers,
     });
     return info;
   } catch (error) {

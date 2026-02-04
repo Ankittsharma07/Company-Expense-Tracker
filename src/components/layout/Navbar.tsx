@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Bell, Search, ChevronDown, LogOut, User as UserIcon, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { resolveAvatarUrl } from '../../lib/avatar';
@@ -204,6 +204,8 @@ export const Navbar = () => {
               <img
                 src={userAvatar}
                 alt={user.name}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
                 className="w-9 h-9 rounded-full border border-slate-200 object-cover shadow-[0_8px_18px_rgba(15,23,42,0.12)] group-hover:ring-2 group-hover:ring-teal-500/25 transition-all"
               />
               <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>

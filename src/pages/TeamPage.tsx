@@ -3,8 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
-import { Plus, Mail, Calendar, Shield, Pencil } from 'lucide-react';
-import { createUser, fetchUsers, updateUser } from '../lib/api';
+import { Plus, Mail, Calendar, Shield, Pencil, KeyRound } from 'lucide-react';
+import { createUser, fetchUsers, updateUser, adminResetUserPassword } from '../lib/api';
 import type { ApiUser } from '../lib/api';
 import { formatDate } from '../lib/utils';
 
@@ -15,6 +15,11 @@ export const TeamPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<ApiUser | null>(null);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetTarget, setResetTarget] = useState<ApiUser | null>(null);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -85,6 +90,13 @@ export const TeamPage = () => {
     setIsEditModalOpen(true);
   };
 
+  const openResetPassword = (user: ApiUser) => {
+    setResetError(null);
+    setResetNotice(null);
+    setResetTarget(user);
+    setIsResetModalOpen(true);
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -139,6 +151,23 @@ export const TeamPage = () => {
     } catch (err) {
       const errMessage = err instanceof Error ? err.message : 'Failed to update user.';
       setError(errMessage);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    setIsResetting(true);
+    setResetError(null);
+    try {
+      await adminResetUserPassword(resetTarget.id);
+      setResetNotice(`Password reset link sent to ${resetTarget.email}.`);
+      setIsResetModalOpen(false);
+      setResetTarget(null);
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Failed to reset password.';
+      setResetError(errMessage);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -216,19 +245,34 @@ export const TeamPage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-slate-500 hover:text-slate-700"
-                          onClick={() => openEditUser(user)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-500 hover:text-slate-700"
+                            onClick={() => openResetPassword(user)}
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-500 hover:text-slate-700"
+                            onClick={() => openEditUser(user)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {!isLoading && !error && resetNotice && (
+            <div className="mt-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+              {resetNotice}
             </div>
           )}
         </CardContent>
@@ -381,6 +425,49 @@ export const TeamPage = () => {
             <Button type="submit">Save Changes</Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={isResetModalOpen}
+        onClose={() => {
+          setIsResetModalOpen(false);
+          setResetTarget(null);
+          setResetError(null);
+        }}
+        title="Reset User Password"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            This will send a secure password reset link to the user.
+          </p>
+          {resetTarget && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              {resetTarget.name} · {resetTarget.email}
+            </div>
+          )}
+          {resetError && (
+            <div className="text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3">
+              {resetError}
+            </div>
+          )}
+          <div className="pt-2 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsResetModalOpen(false);
+                setResetTarget(null);
+                setResetError(null);
+              }}
+              disabled={isResetting}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleResetPassword} disabled={isResetting}>
+              {isResetting ? 'Sending...' : 'Send reset link'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

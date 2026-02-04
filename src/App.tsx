@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -6,6 +5,8 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { ManagerDashboard } from './pages/ManagerDashboard';
 import { EmployeeDashboard } from './pages/EmployeeDashboard';
@@ -14,6 +15,7 @@ import { TeamPage } from './pages/TeamPage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { NotificationAuditPage } from './pages/NotificationAuditPage';
 
 // Component to route based on role
 const DashboardRouter = () => {
@@ -48,6 +50,8 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/dashboard"
             element={
@@ -60,6 +64,7 @@ function App() {
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="team" element={<TeamPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="notification-audit" element={<NotificationAuditPage />} />
             <Route path="subscription" element={<SubscriptionPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

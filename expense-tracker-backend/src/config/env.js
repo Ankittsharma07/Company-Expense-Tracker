@@ -27,4 +27,5 @@ export const env = {
   smtpUser: process.env.SMTP_USER || "",
   smtpPass: process.env.SMTP_PASS || "",
   emailFrom: process.env.EMAIL_FROM || "Expense Tracker <no-reply@expense-tracker.com>",
+  appBaseUrl: process.env.APP_BASE_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
 };

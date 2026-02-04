@@ -55,6 +55,7 @@ enum NotificationAuditStatus {
 enum AuthProvider {
   LOCAL
   GOOGLE
+  LOCAL_GOOGLE
 }
 
 model Company {
@@ -67,6 +68,7 @@ model Company {
   users     User[]
   expenses  Expense[]
   approvals Approval[]
+  passwordResetAuditLogs PasswordResetAuditLog[]
 }
 
 model User {
@@ -89,8 +91,42 @@ model User {
   approvals    Approval[] @relation("ApprovalsByUser")
   notifications Notification[]
   notificationAuditLogs NotificationAuditLog[]
+  passwordResetTokens PasswordResetToken[]
+  passwordResetAuditActor PasswordResetAuditLog[] @relation("PasswordResetActor")
+  passwordResetAuditTarget PasswordResetAuditLog[] @relation("PasswordResetTarget")
 
   @@index([companyId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model PasswordResetAuditLog {
+  id            String   @id @default(cuid())
+  companyId     String
+  actorId       String
+  targetUserId  String
+  createdAt     DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  actor   User    @relation("PasswordResetActor", fields: [actorId], references: [id])
+  target  User    @relation("PasswordResetTarget", fields: [targetUserId], references: [id])
+
+  @@index([companyId])
+  @@index([actorId])
+  @@index([targetUserId])
 }
 
 model Expense {
