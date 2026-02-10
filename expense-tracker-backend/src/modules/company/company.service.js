@@ -3,7 +3,7 @@
 export const getCompanyService = async (companyId) => {
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: { id: true, name: true, plan: true, createdAt: true },
+    select: { id: true, name: true, plan: true, baseCurrency: true, createdAt: true },
   });
   if (!company) {
     throw new Error("Company not found");
@@ -15,6 +15,19 @@ export const updatePlanService = async (companyId, plan) => {
   return prisma.company.update({
     where: { id: companyId },
     data: { plan },
-    select: { id: true, name: true, plan: true, createdAt: true },
+    select: { id: true, name: true, plan: true, baseCurrency: true, createdAt: true },
+  });
+};
+
+export const updateBaseCurrencyService = async (companyId, baseCurrency) => {
+  const expenseCount = await prisma.expense.count({ where: { companyId } });
+  if (expenseCount > 0) {
+    throw new Error("Base currency cannot be changed after expenses exist.");
+  }
+
+  return prisma.company.update({
+    where: { id: companyId },
+    data: { baseCurrency },
+    select: { id: true, name: true, plan: true, baseCurrency: true, createdAt: true },
   });
 };

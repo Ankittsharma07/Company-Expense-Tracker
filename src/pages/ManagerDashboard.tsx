@@ -4,6 +4,8 @@ import { ExpenseTable } from '../components/dashboard/ExpenseTable';
 import { Card, CardHeader, CardTitle } from '../components/ui/Card';
 import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
+import { useDisplayCurrency } from '../hooks/useDisplayCurrency';
+import { sumExpensesInCurrencyDetailed } from '../lib/expenseFx';
 import { approveExpense, fetchExpenses } from '../lib/api';
 import type { Expense } from '../lib/api';
 
@@ -11,6 +13,7 @@ export const ManagerDashboard = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { displayCurrency } = useDisplayCurrency();
 
   const loadExpenses = useCallback(async () => {
     setIsLoading(true);
@@ -46,18 +49,22 @@ export const ManagerDashboard = () => {
     return expenses.filter((expense) => expense.status === 'REJECTED').length;
   }, [expenses]);
 
-  const approvedThisMonth = useMemo(() => {
+  const approvedThisMonthInfo = useMemo(() => {
     const now = new Date();
     const month = now.getMonth();
     const year = now.getFullYear();
-    return expenses
-      .filter((expense) => ['PENDING_ADMIN', 'APPROVED', 'MANAGER_APPROVED', 'ADMIN_APPROVED'].includes(expense.status))
-      .filter((expense) => {
+    return sumExpensesInCurrencyDetailed(
+      expenses,
+      displayCurrency,
+      (expense) => {
+        if (!['PENDING_ADMIN', 'APPROVED', 'MANAGER_APPROVED', 'ADMIN_APPROVED'].includes(expense.status)) {
+          return false;
+        }
         const created = new Date(expense.createdAt);
         return created.getMonth() === month && created.getFullYear() === year;
-      })
-      .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  }, [expenses]);
+      }
+    );
+  }, [expenses, displayCurrency]);
 
   const pendingExpenses = useMemo(() => {
     return expenses.filter((expense) => expense.status === 'PENDING_MANAGER' || expense.status === 'PENDING');
@@ -99,7 +106,7 @@ export const ManagerDashboard = () => {
         />
         <StatCard
           title="Approved this Month"
-          value={isLoading ? '—' : formatCurrency(approvedThisMonth)}
+          value={isLoading ? '—' : formatCurrency(approvedThisMonthInfo.total, approvedThisMonthInfo.currency)}
           icon={<CheckCircle2 className="w-5 h-5" />}
           className="bg-emerald-50/70 border-emerald-100/70"
         />
@@ -117,6 +124,7 @@ export const ManagerDashboard = () => {
         </CardHeader>
         <ExpenseTable
           data={pendingExpenses}
+          displayCurrency={displayCurrency}
           showActions={true}
           isLoading={isLoading}
           error={error}

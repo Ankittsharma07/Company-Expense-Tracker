@@ -7,7 +7,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "backfill:exchange-rates": "node scripts/backfill-expense-exchange-rates.js"
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",

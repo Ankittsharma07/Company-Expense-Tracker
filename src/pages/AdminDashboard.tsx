@@ -9,6 +9,7 @@ import { formatCurrency } from '../lib/utils';
 import { approveExpense, fetchCategoryTotals, fetchExpenses, fetchMonthlyTotals, fetchUsers, fetchApprovalCounts, exportToExcel, exportToPDF } from '../lib/api';
 import type { ApiUser, CategoryTotal, Expense, MonthlyTotal } from '../lib/api';
 import { useToast } from '../components/ui/Toast';
+import { useDisplayCurrency } from '../hooks/useDisplayCurrency';
 import { downloadBlob, generateReportFilename } from '../lib/fileDownload';
 
 export const AdminDashboard = () => {
@@ -28,6 +29,7 @@ export const AdminDashboard = () => {
   const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   const { showToast, ToastComponent } = useToast();
+  const { displayCurrency } = useDisplayCurrency();
 
   const loadDashboard = useCallback(async () => {
     setIsLoading(true);
@@ -36,8 +38,8 @@ export const AdminDashboard = () => {
       const year = new Date().getFullYear();
       const [expenseData, monthlyData, categoryData, userData, approvalCounts] = await Promise.all([
         fetchExpenses(),
-        fetchMonthlyTotals(year),
-        fetchCategoryTotals(),
+        fetchMonthlyTotals(year, displayCurrency),
+        fetchCategoryTotals(undefined, undefined, displayCurrency),
         fetchUsers(),
         fetchApprovalCounts(),
       ]);
@@ -55,7 +57,7 @@ export const AdminDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [displayCurrency]);
 
   React.useEffect(() => {
     loadDashboard();
@@ -78,9 +80,19 @@ export const AdminDashboard = () => {
     return totalSpend / monthlyTotals.length;
   }, [monthlyTotals, totalSpend]);
 
-  const displayCurrency = useMemo(() => {
-    return expenses.find((expense) => expense.currency)?.currency || 'USD';
-  }, [expenses]);
+  const monthlyTotalsDisplay = useMemo(() => monthlyTotals, [monthlyTotals]);
+
+  const categoryTotalsDisplay = useMemo(() => categoryTotals, [categoryTotals]);
+
+  const monthlyCurrency = useMemo(
+    () => monthlyTotals[0]?.currency || displayCurrency,
+    [monthlyTotals, displayCurrency]
+  );
+
+  const categoryCurrency = useMemo(
+    () => categoryTotals[0]?.currency || displayCurrency,
+    [categoryTotals, displayCurrency]
+  );
 
   // Pending approvals count is now fetched from backend
 
@@ -117,7 +129,7 @@ export const AdminDashboard = () => {
 
     setIsExportingExcel(true);
     try {
-      const blob = await exportToExcel(startDate, endDate);
+      const blob = await exportToExcel(startDate, endDate, displayCurrency);
       const filename = generateReportFilename(startDate, endDate, 'xlsx');
       downloadBlob(blob, filename);
       showToast('Excel report downloaded successfully!', 'success');
@@ -138,7 +150,7 @@ export const AdminDashboard = () => {
 
     setIsExportingPDF(true);
     try {
-      const blob = await exportToPDF(startDate, endDate);
+      const blob = await exportToPDF(startDate, endDate, displayCurrency);
       const filename = generateReportFilename(startDate, endDate, 'pdf');
       downloadBlob(blob, filename);
       showToast('PDF report downloaded successfully!', 'success');
@@ -222,7 +234,7 @@ export const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 stagger-children">
         <StatCard
           title="Total Spend"
-          value={isLoading ? '—' : formatCurrency(totalSpend, displayCurrency)}
+          value={isLoading ? '—' : formatCurrency(totalSpend, monthlyCurrency)}
           icon={<DollarSign className="w-5 h-5" />}
           trend={{ value: 12.5, isPositive: true }}
         />
@@ -240,7 +252,7 @@ export const AdminDashboard = () => {
         />
         <StatCard
           title="Monthly Average"
-          value={isLoading ? '—' : formatCurrency(monthlyAverage, displayCurrency)}
+          value={isLoading ? '—' : formatCurrency(monthlyAverage, monthlyCurrency)}
           icon={<TrendingUp className="w-5 h-5" />}
         />
       </div>
@@ -256,7 +268,7 @@ export const AdminDashboard = () => {
             ) : error ? (
               <div className="py-10 text-sm text-rose-600">{error}</div>
             ) : (
-              <SpendTrendChart data={monthlyTotals} currency={displayCurrency} />
+              <SpendTrendChart data={monthlyTotalsDisplay} currency={monthlyCurrency} />
             )}
           </CardContent>
         </Card>
@@ -270,7 +282,7 @@ export const AdminDashboard = () => {
             ) : error ? (
               <div className="py-10 text-sm text-rose-600">{error}</div>
             ) : (
-              <CategoryPieChart data={categoryTotals} currency={displayCurrency} />
+              <CategoryPieChart data={categoryTotalsDisplay} currency={categoryCurrency} />
             )}
           </CardContent>
         </Card>
@@ -290,6 +302,7 @@ export const AdminDashboard = () => {
         </CardHeader>
         <ExpenseTable
           data={expenses}
+          displayCurrency={displayCurrency}
           limit={showAllExpenses ? undefined : 5}
           showActions={true}
           isLoading={isLoading}

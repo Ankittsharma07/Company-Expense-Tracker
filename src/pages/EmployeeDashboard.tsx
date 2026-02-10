@@ -8,6 +8,8 @@ import { Plus, Wallet, Receipt } from 'lucide-react';
 import { createExpense, deleteExpense, fetchExpenses, updateExpense } from '../lib/api';
 import type { Expense } from '../lib/api';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDisplayCurrency } from '../hooks/useDisplayCurrency';
+import { sumExpensesInCurrencyDetailed } from '../lib/expenseFx';
 
 export const EmployeeDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,6 +17,7 @@ export const EmployeeDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const { displayCurrency } = useDisplayCurrency();
   const [formState, setFormState] = useState({
     description: '',
     amount: '',
@@ -51,22 +54,14 @@ export const EmployeeDashboard = () => {
     return () => clearInterval(intervalId);
   }, [loadExpenses]);
 
-  const displayCurrency = useMemo(() => {
-    return expenses.find((expense) => expense.currency)?.currency || 'USD';
-  }, [expenses]);
+  const totalSpendInfo = useMemo(() => {
+    return sumExpensesInCurrencyDetailed(expenses, displayCurrency, (expense) => expense.status !== 'REJECTED');
+  }, [expenses, displayCurrency]);
 
-  const totalSpend = useMemo(() => {
-    return expenses
-      .filter((expense) => expense.status !== 'REJECTED')
-      .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  }, [expenses]);
-
-  const pendingReimbursement = useMemo(() => {
+  const pendingReimbursementInfo = useMemo(() => {
     const pendingStatuses = new Set(['PENDING_MANAGER', 'PENDING_ADMIN', 'PENDING']);
-    return expenses
-      .filter((expense) => pendingStatuses.has(expense.status))
-      .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-  }, [expenses]);
+    return sumExpensesInCurrencyDetailed(expenses, displayCurrency, (expense) => pendingStatuses.has(expense.status));
+  }, [expenses, displayCurrency]);
 
   const resetForm = () => {
     setFormState({
@@ -123,7 +118,7 @@ export const EmployeeDashboard = () => {
 
     try {
       if (editingExpense) {
-        await updateExpense(editingExpense.id, {
+        const updated = await updateExpense(editingExpense.id, {
           description: formState.description,
           category: formState.category,
           amount: amountValue,
@@ -132,8 +127,9 @@ export const EmployeeDashboard = () => {
           receiptFile: formState.receiptFile,
           removeReceipt: formState.removeReceipt,
         });
+        console.log(`[Expense] Updated with rate provider: ${updated.rateProvider || "NONE"}, rate: ${updated.exchangeRate || 1}`);
       } else {
-        await createExpense({
+        const created = await createExpense({
           description: formState.description,
           category: formState.category,
           amount: amountValue,
@@ -141,6 +137,7 @@ export const EmployeeDashboard = () => {
           expenseDate: formState.date ? new Date(formState.date).toISOString() : undefined,
           receiptFile: formState.receiptFile,
         });
+        console.log(`[Expense] Created with rate provider: ${created.rateProvider || "NONE"}, rate: ${created.exchangeRate || 1}`);
       }
       setIsModalOpen(false);
       resetForm();
@@ -166,12 +163,12 @@ export const EmployeeDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
         <StatCard
           title="My Spending (YTD)"
-          value={isLoading ? '—' : formatCurrency(totalSpend, displayCurrency)}
+          value={isLoading ? '—' : formatCurrency(totalSpendInfo.total, totalSpendInfo.currency)}
           icon={<Wallet className="w-5 h-5" />}
         />
         <StatCard
           title="Pending Reimbursement"
-          value={isLoading ? '—' : formatCurrency(pendingReimbursement, displayCurrency)}
+          value={isLoading ? '—' : formatCurrency(pendingReimbursementInfo.total, pendingReimbursementInfo.currency)}
           icon={<Receipt className="w-5 h-5" />}
         />
       </div>
@@ -182,6 +179,7 @@ export const EmployeeDashboard = () => {
         </CardHeader>
         <ExpenseTable
           data={expenses}
+          displayCurrency={displayCurrency}
           showActions={true}
           canEdit={true}
           canDelete={true}

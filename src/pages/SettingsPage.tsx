@@ -1,17 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { resolveAvatarUrl } from '../lib/avatar';
-import { uploadMyAvatar } from '../lib/api';
+import { uploadMyAvatar, getSupportedCurrencies, getCompanySettings, updateCompanyBaseCurrency, updateUserPreferredCurrency, type Currency, type Company } from '../lib/api';
 import { RoleBadge } from '../components/ui/RoleBadge';
+import { Globe, Building2 } from 'lucide-react';
 
 export const SettingsPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, refreshUser } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Currency state
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [selectedBaseCurrency, setSelectedBaseCurrency] = useState<string>('USD');
+  const [selectedPreferredCurrency, setSelectedPreferredCurrency] = useState<string | null>(null);
+  const [isSavingBaseCurrency, setIsSavingBaseCurrency] = useState(false);
+  const [isSavingPreferredCurrency, setIsSavingPreferredCurrency] = useState(false);
+  const [currencyError, setCurrencyError] = useState<string | null>(null);
 
   const currentAvatar = useMemo(() => {
     if (!user) return '';
@@ -20,6 +30,29 @@ export const SettingsPage = () => {
       user.googleAvatarUrl || null,
       user.email
     );
+  }, [user]);
+
+  // Load currencies and company settings
+  useEffect(() => {
+    const loadCurrencyData = async () => {
+      try {
+        const [currenciesData, companyData] = await Promise.all([
+          getSupportedCurrencies(),
+          getCompanySettings(),
+        ]);
+        setCurrencies(currenciesData);
+        setCompany(companyData);
+        setSelectedBaseCurrency(companyData.baseCurrency);
+        setSelectedPreferredCurrency(user?.preferredCurrency || null);
+      } catch (err) {
+        console.error('Failed to load currency data:', err);
+        setCurrencyError('Failed to load currency settings');
+      }
+    };
+
+    if (user) {
+      loadCurrencyData();
+    }
   }, [user]);
 
   if (!user) {
@@ -55,6 +88,40 @@ export const SettingsPage = () => {
       setError(message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveBaseCurrency = async () => {
+    if (!company || selectedBaseCurrency === company.baseCurrency) {
+      return;
+    }
+    setIsSavingBaseCurrency(true);
+    setCurrencyError(null);
+    try {
+      const updatedCompany = await updateCompanyBaseCurrency(selectedBaseCurrency);
+      setCompany(updatedCompany);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update base currency';
+      setCurrencyError(message);
+    } finally {
+      setIsSavingBaseCurrency(false);
+    }
+  };
+
+  const handleSavePreferredCurrency = async () => {
+    if (selectedPreferredCurrency === user.preferredCurrency) {
+      return;
+    }
+    setIsSavingPreferredCurrency(true);
+    setCurrencyError(null);
+    try {
+      await updateUserPreferredCurrency(selectedPreferredCurrency);
+      await refreshUser();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update preferred currency';
+      setCurrencyError(message);
+    } finally {
+      setIsSavingPreferredCurrency(false);
     }
   };
 
@@ -104,6 +171,102 @@ export const SettingsPage = () => {
                 Save Avatar
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Company Base Currency - ADMIN Only */}
+      {user.role === 'ADMIN' && company && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-slate-600" />
+              <CardTitle>Company Currency Settings</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-slate-600 mb-4">
+                  Set the base currency for your company. All financial reports and aggregations will use this currency.
+                </p>
+                <label className="text-sm font-medium text-slate-700 block mb-2">
+                  Base Currency
+                </label>
+                <div className="flex gap-3 items-start">
+                  <select
+                    value={selectedBaseCurrency}
+                    onChange={(e) => setSelectedBaseCurrency(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  >
+                    {currencies.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code} - {currency.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    onClick={handleSaveBaseCurrency}
+                    isLoading={isSavingBaseCurrency}
+                    disabled={selectedBaseCurrency === company.baseCurrency}
+                  >
+                    Save
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Current: {company.baseCurrency}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* User Preferred Currency */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-slate-600" />
+            <CardTitle>Display Currency Preference</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-slate-600 mb-4">
+                Choose how you prefer to view amounts in the dashboard. This doesn't affect stored expense data.
+              </p>
+              <label className="text-sm font-medium text-slate-700 block mb-2">
+                Preferred Currency
+              </label>
+              <div className="flex gap-3 items-start">
+                <select
+                  value={selectedPreferredCurrency || ''}
+                  onChange={(e) => setSelectedPreferredCurrency(e.target.value || null)}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                >
+                  <option value="">Default (Company Base Currency)</option>
+                  {currencies.map((currency) => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.symbol} {currency.code} - {currency.name}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  onClick={handleSavePreferredCurrency}
+                  isLoading={isSavingPreferredCurrency}
+                  disabled={selectedPreferredCurrency === user.preferredCurrency}
+                >
+                  Save
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Current: {user.preferredCurrency || `Default (${company?.baseCurrency || 'USD'})`}
+              </p>
+            </div>
+            {currencyError && (
+              <p className="text-sm text-rose-600">{currencyError}</p>
+            )}
           </div>
         </CardContent>
       </Card>

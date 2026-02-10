@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { ExpenseTable } from '../components/dashboard/ExpenseTable';
+import { useDisplayCurrency } from '../hooks/useDisplayCurrency';
 
 type TabType = 'pending' | 'approved' | 'rejected';
 
@@ -15,6 +16,7 @@ const ApprovalsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const { displayCurrency } = useDisplayCurrency();
 
   // Load expenses
   const loadExpenses = async () => {
@@ -201,6 +203,7 @@ const ApprovalsPage: React.FC = () => {
       ) : (
         <ExpenseTable
           data={filteredExpenses}
+          displayCurrency={displayCurrency}
           showActions={activeTab === 'pending'}
           canApprove={(expense) => canApprove(expense)}
           onApprove={handleApprove}

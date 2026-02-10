@@ -11,6 +11,7 @@ import {
   updateMyNotificationPreferences,
   updateUserProfile,
   updateMyAvatar,
+  updateMyPreferredCurrency,
 } from "./user.controller.js";
 
 export const userRoutes = Router();
@@ -18,6 +19,7 @@ export const userRoutes = Router();
 userRoutes.get("/me", authMiddleware, getMe);
 userRoutes.post("/me/avatar", authMiddleware, uploadAvatar, handleUploadError, updateMyAvatar);
 userRoutes.patch("/me/notification-preferences", authMiddleware, updateMyNotificationPreferences);
+userRoutes.patch("/me/currency", authMiddleware, updateMyPreferredCurrency);
 userRoutes.get("/", authMiddleware, requireRole("ADMIN"), listUsers);
 userRoutes.post("/", authMiddleware, requireRole("ADMIN"), enforcePlanLimits, createUser);
 userRoutes.patch("/:id/role", authMiddleware, requireRole("ADMIN"), updateRole);

@@ -3,6 +3,7 @@ import { Bell, Search, ChevronDown, LogOut, User as UserIcon, Settings } from 'l
 import { useAuth } from '../../context/AuthContext';
 import { resolveAvatarUrl } from '../../lib/avatar';
 import { RoleBadge } from '../ui/RoleBadge';
+import { CurrencySwitcher } from '../currency/CurrencySwitcher';
 import {
   fetchNotifications,
   fetchUnreadNotificationCount,
@@ -192,6 +193,8 @@ export const Navbar = () => {
             </div>
           )}
         </div>
+
+        <CurrencySwitcher />
 
         <div className="h-6 w-px bg-slate-200/80" />
 

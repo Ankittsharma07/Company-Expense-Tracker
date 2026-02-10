@@ -4,6 +4,11 @@ import { exportExcelService, exportPDFService } from "./reports.service.js";
 const exportSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  displayCurrency: z
+    .string()
+    .length(3)
+    .transform((value) => value.toUpperCase())
+    .optional(),
 });
 
 export const exportExcel = async (req, res) => {
@@ -14,6 +19,7 @@ export const exportExcel = async (req, res) => {
       user: req.user,
       startDate: payload.startDate,
       endDate: payload.endDate,
+      displayCurrency: payload.displayCurrency,
     });
 
     const filename = `expenses_${payload.startDate}_to_${payload.endDate}.xlsx`;
@@ -38,6 +44,7 @@ export const exportPDF = async (req, res) => {
       user: req.user,
       startDate: payload.startDate,
       endDate: payload.endDate,
+      displayCurrency: payload.displayCurrency,
     });
 
     const filename = `expenses_${payload.startDate}_to_${payload.endDate}.pdf`;
@@ -53,4 +60,3 @@ export const exportPDF = async (req, res) => {
     return res.status(500).json({ message: error.message || "Failed to export to PDF" });
   }
 };
-

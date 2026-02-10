@@ -1,6 +1,39 @@
 import { prisma } from "../../config/db.js";
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
+import { getConversionRate, getExpenseAmountInCurrency } from "../../services/currency/currency.service.js";
+
+const normalizeCurrencyCode = (currency) => {
+  if (!currency || typeof currency !== "string") return null;
+  return currency.trim().toUpperCase();
+};
+
+const canConvertExpense = (expense, targetCurrency) => {
+  const display = normalizeCurrencyCode(targetCurrency);
+  const originalCurrency = normalizeCurrencyCode(expense.originalCurrency ?? expense.currency);
+  if (!display || !originalCurrency || !expense.exchangeRateBase || !expense.exchangeRates) return false;
+
+  const rate = getConversionRate({
+    fromCurrency: originalCurrency,
+    toCurrency: display,
+    exchangeRateBase: expense.exchangeRateBase,
+    exchangeRates: expense.exchangeRates,
+  });
+
+  return Boolean(rate);
+};
+
+const resolveTargetCurrency = (expenses, displayCurrency) => {
+  const normalizedDisplay = normalizeCurrencyCode(displayCurrency);
+  const fallbackCurrency = normalizeCurrencyCode(expenses[0]?.baseCurrency ?? expenses[0]?.currency) || normalizedDisplay || "USD";
+  const canConvertAll = normalizedDisplay
+    ? normalizedDisplay === fallbackCurrency || expenses.every((expense) => canConvertExpense(expense, normalizedDisplay))
+    : false;
+  return {
+    resolvedCurrency: canConvertAll ? normalizedDisplay : fallbackCurrency,
+    targetCurrency: canConvertAll ? normalizedDisplay : undefined,
+  };
+};
 
 // Fetch expenses based on date range and user role
 const fetchExpensesForReport = async ({ companyId, user, startDate, endDate }) => {
@@ -29,28 +62,37 @@ const fetchExpensesForReport = async ({ companyId, user, startDate, endDate }) =
 };
 
 // Calculate summary statistics
-const calculateSummary = (expenses) => {
-  const total = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const approved = expenses
-    .filter((exp) => exp.status === "APPROVED" || exp.status === "ADMIN_APPROVED")
-    .reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const pending = expenses
-    .filter((exp) => exp.status === "PENDING" || exp.status === "MANAGER_APPROVED")
-    .reduce((sum, exp) => sum + Number(exp.amount), 0);
+const calculateSummary = (expenses, targetCurrency) => {
+  const totals = {
+    total: 0,
+    approved: 0,
+    pending: 0,
+    categoryTotals: {},
+  };
 
-  // Category-wise totals
-  const categoryTotals = {};
-  expenses.forEach((exp) => {
-    categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + Number(exp.amount);
+  expenses.forEach((expense) => {
+    const amountInfo = getExpenseAmountInCurrency(expense, targetCurrency);
+    const amount = Number(amountInfo.amount || 0);
+    totals.total += amount;
+
+    if (expense.status === "APPROVED" || expense.status === "ADMIN_APPROVED") {
+      totals.approved += amount;
+    } else if (expense.status === "PENDING" || expense.status === "MANAGER_APPROVED") {
+      totals.pending += amount;
+    }
+
+    totals.categoryTotals[expense.category] = (totals.categoryTotals[expense.category] || 0) + amount;
   });
 
-  return { total, approved, pending, categoryTotals };
+  return totals;
 };
 
 // Excel Export Service
-export const exportExcelService = async ({ companyId, user, startDate, endDate }) => {
+export const exportExcelService = async ({ companyId, user, startDate, endDate, displayCurrency }) => {
   const expenses = await fetchExpensesForReport({ companyId, user, startDate, endDate });
-  const summary = calculateSummary(expenses);
+  const { resolvedCurrency, targetCurrency } = resolveTargetCurrency(expenses, displayCurrency);
+  const summary = calculateSummary(expenses, targetCurrency);
+  const currencyLabel = resolvedCurrency || "USD";
 
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Expenses");
@@ -67,7 +109,7 @@ export const exportExcelService = async ({ companyId, user, startDate, endDate }
     "Date",
     "Description",
     "Category",
-    "Amount",
+    `Amount (${currencyLabel})`,
     "Status",
     "Submitted By",
     "Approved By",
@@ -81,14 +123,15 @@ export const exportExcelService = async ({ companyId, user, startDate, endDate }
 
   // Add data rows
   expenses.forEach((expense) => {
+    const amountInfo = getExpenseAmountInCurrency(expense, targetCurrency);
     worksheet.addRow([
-      expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString() : "—",
+      expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString() : "â€”",
       expense.description,
       expense.category,
-      Number(expense.amount),
+      Number(amountInfo.amount),
       expense.status,
-      expense.user?.name || "—",
-      expense.approvedBy || "—",
+      expense.user?.name || "â€”",
+      expense.approvedBy || "â€”",
     ]);
   });
 
@@ -115,9 +158,11 @@ export const exportExcelService = async ({ companyId, user, startDate, endDate }
 };
 
 // PDF Export Service
-export const exportPDFService = async ({ companyId, user, startDate, endDate }) => {
+export const exportPDFService = async ({ companyId, user, startDate, endDate, displayCurrency }) => {
   const expenses = await fetchExpensesForReport({ companyId, user, startDate, endDate });
-  const summary = calculateSummary(expenses);
+  const { resolvedCurrency, targetCurrency } = resolveTargetCurrency(expenses, displayCurrency);
+  const summary = calculateSummary(expenses, targetCurrency);
+  const currencyLabel = resolvedCurrency || "USD";
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 });
@@ -135,33 +180,33 @@ export const exportPDFService = async ({ companyId, user, startDate, endDate }) 
     // Summary
     doc.fontSize(14).text("Summary", { underline: true });
     doc.fontSize(10);
-    doc.text(`Total Expenses: $${summary.total.toFixed(2)}`);
-    doc.text(`Approved Amount: $${summary.approved.toFixed(2)}`);
-    doc.text(`Pending Amount: $${summary.pending.toFixed(2)}`);
+    doc.text(`Total Expenses: ${currencyLabel} ${summary.total.toFixed(2)}`);
+    doc.text(`Approved Amount: ${currencyLabel} ${summary.approved.toFixed(2)}`);
+    doc.text(`Pending Amount: ${currencyLabel} ${summary.pending.toFixed(2)}`);
     doc.moveDown();
 
     // Category Breakdown
     doc.fontSize(12).text("Category Breakdown", { underline: true });
     doc.fontSize(10);
     Object.entries(summary.categoryTotals).forEach(([category, total]) => {
-      doc.text(`${category}: $${total.toFixed(2)}`);
+      doc.text(`${category}: ${currencyLabel} ${Number(total).toFixed(2)}`);
     });
     doc.moveDown();
 
     // Expenses Table
     doc.fontSize(12).text("Expense Details", { underline: true });
     doc.fontSize(8);
-    
+
     expenses.forEach((expense, index) => {
       if (index > 0 && index % 20 === 0) {
         doc.addPage();
       }
+      const amountInfo = getExpenseAmountInCurrency(expense, targetCurrency);
       doc.text(
-        `${expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString() : "—"} | ${expense.description} | ${expense.category} | $${Number(expense.amount).toFixed(2)} | ${expense.status}`
+        `${expense.expenseDate ? new Date(expense.expenseDate).toLocaleDateString() : "â€”"} | ${expense.description} | ${expense.category} | ${currencyLabel} ${Number(amountInfo.amount).toFixed(2)} | ${expense.status}`
       );
     });
 
     doc.end();
   });
 };
-

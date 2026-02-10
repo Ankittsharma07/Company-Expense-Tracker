@@ -10,11 +10,19 @@ import {
 import { uploadReceipt, deleteReceipt } from "../../services/storage/receiptStorage.js";
 import { notifyExpenseSubmitted } from "../../services/notifications/expenseNotifications.js";
 
+const entryCurrencySchema = z
+  .string()
+  .length(3)
+  .transform((value) => value.toUpperCase())
+  .refine((value) => ["USD", "INR"].includes(value), {
+    message: "Currency must be USD or INR",
+  });
+
 const createExpenseSchema = z.object({
   description: z.string().min(3),
   category: z.string().min(2),
   amount: z.number().positive(),
-  currency: z.string().min(3).max(3).optional(),
+  currency: entryCurrencySchema.optional(),
   expenseDate: z.string().datetime().optional(),
 });
 
@@ -22,7 +30,7 @@ const updateExpenseSchema = z.object({
   description: z.string().min(3).optional(),
   category: z.string().min(2).optional(),
   amount: z.number().positive().optional(),
-  currency: z.string().min(3).max(3).optional(),
+  currency: entryCurrencySchema.optional(),
   expenseDate: z.string().datetime().optional(),
   removeReceipt: z.boolean().optional(),
 });

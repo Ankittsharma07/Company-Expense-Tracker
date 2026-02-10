@@ -6,6 +6,7 @@ import {
   updateRoleService,
   updateNotificationPreferencesService,
   updateUserProfileService,
+  updatePreferredCurrencyService,
 } from "./user.service.js";
 import { uploadAvatar as uploadAvatarToCloudinary } from "../../services/storage/avatarStorage.js";
 
@@ -28,6 +29,10 @@ const updateUserSchema = z.object({
 const updatePreferencesSchema = z.object({
   emailNotificationsEnabled: z.boolean().optional(),
   inAppNotificationsEnabled: z.boolean().optional(),
+});
+
+const updateCurrencySchema = z.object({
+  preferredCurrency: z.string().length(3).toUpperCase().nullable(),
 });
 
 export const createUser = async (req, res) => {
@@ -128,5 +133,22 @@ export const updateMyNotificationPreferences = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
     return res.status(400).json({ message: error.message || "Failed to update preferences" });
+  }
+};
+
+export const updateMyPreferredCurrency = async (req, res) => {
+  try {
+    const payload = updateCurrencySchema.parse(req.body);
+    const user = await updatePreferredCurrencyService({
+      companyId: req.user.companyId,
+      userId: req.user.id,
+      preferredCurrency: payload.preferredCurrency,
+    });
+    return res.json(user);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation failed", errors: error.errors });
+    }
+    return res.status(400).json({ message: error.message || "Failed to update currency preference" });
   }
 };

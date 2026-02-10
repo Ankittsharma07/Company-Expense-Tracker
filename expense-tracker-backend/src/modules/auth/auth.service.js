@@ -164,12 +164,13 @@ export const googleLoginService = async (token) => {
       data: { name: `${name}'s Company` },
     });
 
+    // First user of a company should be ADMIN
     user = await prisma.user.create({
       data: {
         companyId: company.id,
         name,
         email,
-        role: "EMPLOYEE",
+        role: "ADMIN", // Changed from EMPLOYEE to ADMIN for first user
         authProvider: "GOOGLE",
         googleAvatarUrl: picture,
         // passwordHash is optional, so we don't provide it

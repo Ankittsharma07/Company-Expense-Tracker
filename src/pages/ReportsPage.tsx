@@ -6,18 +6,38 @@ import { exportToExcel, exportToPDF, fetchExpenses } from '../lib/api';
 import type { Expense } from '../lib/api';
 import { formatCurrency } from '../lib/utils';
 import { useToast } from '../components/ui/Toast';
+import { useDisplayCurrency } from '../hooks/useDisplayCurrency';
 import { downloadBlob, generateReportFilename } from '../lib/fileDownload';
+import { getExpenseDisplayValue } from '../lib/expenseFx';
 
-const buildSummary = (expenses: Expense[]) => {
+const normalizeCurrencyCode = (currency?: string | null) => {
+  if (!currency || typeof currency !== 'string') return null;
+  return currency.trim().toUpperCase();
+};
+
+const buildSummary = (expenses: Expense[], displayCurrency?: string) => {
+  const normalizedDisplay = normalizeCurrencyCode(displayCurrency);
+  const fallbackCurrency =
+    normalizeCurrencyCode(expenses[0]?.baseCurrency ?? expenses[0]?.currency) ||
+    normalizedDisplay ||
+    'USD';
+  const canConvertAll = normalizedDisplay
+    ? normalizedDisplay === fallbackCurrency ||
+      expenses.every((expense) => !getExpenseDisplayValue(expense, normalizedDisplay).isFallback)
+    : false;
+  const targetCurrency = canConvertAll ? normalizedDisplay : undefined;
+  const resolvedCurrency = canConvertAll ? normalizedDisplay : fallbackCurrency;
+
   const totals = {
     total: 0,
     approved: 0,
     pending: 0,
     rejected: 0,
+    currency: resolvedCurrency,
   };
 
   expenses.forEach((expense) => {
-    const amount = Number(expense.amount || 0);
+    const amount = getExpenseDisplayValue(expense, targetCurrency).amount;
     totals.total += amount;
     if (expense.status === 'APPROVED') {
       totals.approved += amount;
@@ -33,13 +53,18 @@ const buildSummary = (expenses: Expense[]) => {
 
 export const ReportsPage = () => {
   const { showToast, ToastComponent } = useToast();
+  const { displayCurrency } = useDisplayCurrency();
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [summary, setSummary] = useState(() => buildSummary([]));
+  const [summary, setSummary] = useState(() => buildSummary([], displayCurrency));
+
+  React.useEffect(() => {
+    setSummary(buildSummary(expenses, displayCurrency));
+  }, [expenses, displayCurrency]);
 
   const handleGenerate = async () => {
     if (!startDate || !endDate) {
@@ -51,7 +76,7 @@ export const ReportsPage = () => {
     try {
       const data = await fetchExpenses({ from: startDate, to: endDate });
       setExpenses(data);
-      setSummary(buildSummary(data));
+      setSummary(buildSummary(data, displayCurrency));
       showToast('Report preview generated', 'success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate report';
@@ -68,7 +93,7 @@ export const ReportsPage = () => {
     }
     setIsExportingExcel(true);
     try {
-      const blob = await exportToExcel(startDate, endDate);
+      const blob = await exportToExcel(startDate, endDate, displayCurrency);
       downloadBlob(blob, generateReportFilename(startDate, endDate, 'xlsx'));
       showToast('Excel report downloaded successfully!', 'success');
     } catch (error) {
@@ -86,7 +111,7 @@ export const ReportsPage = () => {
     }
     setIsExportingPDF(true);
     try {
-      const blob = await exportToPDF(startDate, endDate);
+      const blob = await exportToPDF(startDate, endDate, displayCurrency);
       downloadBlob(blob, generateReportFilename(startDate, endDate, 'pdf'));
       showToast('PDF report downloaded successfully!', 'success');
     } catch (error) {
@@ -165,7 +190,7 @@ export const ReportsPage = () => {
             <CardTitle>Total Spend</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold text-slate-900">
-            {formatCurrency(summary.total)}
+            {formatCurrency(summary.total, summary.currency || displayCurrency)}
           </CardContent>
         </Card>
         <Card>
@@ -173,7 +198,7 @@ export const ReportsPage = () => {
             <CardTitle>Approved</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold text-emerald-600">
-            {formatCurrency(summary.approved)}
+            {formatCurrency(summary.approved, summary.currency || displayCurrency)}
           </CardContent>
         </Card>
         <Card>
@@ -181,7 +206,7 @@ export const ReportsPage = () => {
             <CardTitle>Pending</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold text-amber-600">
-            {formatCurrency(summary.pending)}
+            {formatCurrency(summary.pending, summary.currency || displayCurrency)}
           </CardContent>
         </Card>
       </div>
@@ -216,7 +241,10 @@ export const ReportsPage = () => {
                       <td className="px-6 py-3 text-sm text-slate-900">{expense.description}</td>
                       <td className="px-6 py-3 text-sm text-slate-600">{expense.category}</td>
                       <td className="px-6 py-3 text-sm font-semibold text-slate-900">
-                        {formatCurrency(Number(expense.amount || 0), expense.currency || 'USD')}
+                        {(() => {
+                          const { amount, currency } = getExpenseDisplayValue(expense, displayCurrency);
+                          return formatCurrency(amount, currency);
+                        })()}
                       </td>
                       <td className="px-6 py-3 text-sm text-slate-600">{expense.status}</td>
                     </tr>

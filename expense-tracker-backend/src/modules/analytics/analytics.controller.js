@@ -1,19 +1,27 @@
 ﻿import { z } from "zod";
 import { monthlyTotalsService, categoryTotalsService } from "./analytics.service.js";
 
+const displayCurrencySchema = z
+  .string()
+  .length(3)
+  .transform((value) => value.toUpperCase())
+  .optional();
+
 const monthlySchema = z.object({
   year: z.string().optional(),
+  displayCurrency: displayCurrencySchema,
 });
 
 const categorySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
+  displayCurrency: displayCurrencySchema,
 });
 
 export const monthlyTotals = async (req, res) => {
   try {
     const payload = monthlySchema.parse(req.query);
-    const result = await monthlyTotalsService(req.user.companyId, payload.year);
+    const result = await monthlyTotalsService(req.user.companyId, payload.year, payload.displayCurrency);
     return res.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -26,7 +34,7 @@ export const monthlyTotals = async (req, res) => {
 export const categoryTotals = async (req, res) => {
   try {
     const payload = categorySchema.parse(req.query);
-    const result = await categoryTotalsService(req.user.companyId, payload.from, payload.to);
+    const result = await categoryTotalsService(req.user.companyId, payload.from, payload.to, payload.displayCurrency);
     return res.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {

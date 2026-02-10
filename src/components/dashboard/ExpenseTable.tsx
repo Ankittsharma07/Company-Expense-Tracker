@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { getExpenseDisplayValue } from '../../lib/expenseFx';
 import { Check, X, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Expense } from '../../lib/api';
 
@@ -18,6 +19,7 @@ interface ExpenseTableProps {
   onReject?: (expense: Expense) => void;
   onEdit?: (expense: Expense) => void;
   onDelete?: (expense: Expense) => void;
+  displayCurrency?: string;
 }
 
 const STATUS_MAP: Record<string, { label: string; badge: 'pending' | 'approved' | 'rejected' | 'default' }> = {
@@ -30,11 +32,6 @@ const STATUS_MAP: Record<string, { label: string; badge: 'pending' | 'approved' 
   PENDING: { label: 'Pending Manager', badge: 'pending' },
   MANAGER_APPROVED: { label: 'Pending Admin', badge: 'pending' },
   ADMIN_APPROVED: { label: 'Approved', badge: 'approved' },
-};
-
-const normalizeAmount = (amount: Expense['amount']) => {
-  const parsed = Number(amount);
-  return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 export const ExpenseTable = ({
@@ -50,6 +47,7 @@ export const ExpenseTable = ({
   onReject,
   onEdit,
   onDelete,
+  displayCurrency,
 }: ExpenseTableProps) => {
   const rows = limit ? data.slice(0, limit) : data;
   const canApprove = canApproveProp ?? Boolean(onApprove || onReject);
@@ -125,7 +123,10 @@ export const ExpenseTable = ({
                 {expense.expenseDate ? formatDate(expense.expenseDate) : '—'}
               </td>
               <td className="px-6 py-4 font-semibold text-slate-900 text-sm">
-                {formatCurrency(normalizeAmount(expense.amount), expense.currency || 'USD')}
+                {(() => {
+                  const { amount, currency } = getExpenseDisplayValue(expense, displayCurrency);
+                  return formatCurrency(amount, currency);
+                })()}
               </td>
               <td className="px-6 py-4">
                 <Badge status={statusConfig.badge}>{statusConfig.label}</Badge>

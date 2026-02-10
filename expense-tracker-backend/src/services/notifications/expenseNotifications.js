@@ -66,7 +66,7 @@ export const notifyExpenseSubmitted = async ({ companyId, expenseId }) => {
     return null;
   }
 
-  const amountText = formatCurrencyAmount(expense.amount, expense.currency);
+  const amountText = formatCurrencyAmount(expense.baseAmount ?? expense.amount, expense.baseCurrency ?? expense.currency);
   const managerTitle = "New expense submitted";
   const managerMessage = `New expense submitted by ${expense.user.name} for ${amountText}`;
   const managerEmailTemplate = {

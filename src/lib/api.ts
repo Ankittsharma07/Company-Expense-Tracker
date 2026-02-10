@@ -82,6 +82,7 @@ export type ApiUser = {
   email: string;
   role: string;
   companyId: string;
+  preferredCurrency?: string | null;
   avatarUrl?: string | null;
   googleAvatarUrl?: string | null;
   emailNotificationsEnabled?: boolean;
@@ -100,7 +101,17 @@ export type Expense = {
   description: string;
   category: string;
   amount: number | string;
-  currency?: string;
+  currency: string;
+  originalAmount?: number | string;
+  originalCurrency?: string;
+  exchangeRate?: number | string;
+  baseAmount?: number | string;
+  baseCurrency?: string;
+  exchangeRateBase?: string | null;
+  exchangeRates?: Record<string, number> | null;
+  exchangeRateTimestamp?: string | null;
+  rateProvider?: string;
+  rateTimestamp?: string;
   status: ExpenseStatus;
   receiptUrl?: string | null;
   expenseDate: string;
@@ -126,11 +137,13 @@ export type AppNotification = {
 export type MonthlyTotal = {
   month: string;
   total: number;
+  currency?: string;
 };
 
 export type CategoryTotal = {
   category: string;
   total: number;
+  currency?: string;
 };
 
 export const fetchMe = () => apiFetch<ApiUser>("/api/users/me");
@@ -236,15 +249,19 @@ export const deleteExpense = (id: string) => {
   });
 };
 
-export const fetchMonthlyTotals = (year?: number) => {
-  const query = year ? `?year=${year}` : "";
-  return apiFetch<MonthlyTotal[]>(`/api/analytics/monthly${query}`);
+export const fetchMonthlyTotals = (year?: number, displayCurrency?: string) => {
+  const search = new URLSearchParams();
+  if (year) search.append("year", String(year));
+  if (displayCurrency) search.append("displayCurrency", displayCurrency);
+  const query = search.toString();
+  return apiFetch<MonthlyTotal[]>(`/api/analytics/monthly${query ? `?${query}` : ""}`);
 };
 
-export const fetchCategoryTotals = (from?: string, to?: string) => {
+export const fetchCategoryTotals = (from?: string, to?: string, displayCurrency?: string) => {
   const search = new URLSearchParams();
   if (from) search.append("from", from);
   if (to) search.append("to", to);
+  if (displayCurrency) search.append("displayCurrency", displayCurrency);
   const query = search.toString();
   return apiFetch<CategoryTotal[]>(`/api/analytics/categories${query ? `?${query}` : ""}`);
 };
@@ -343,7 +360,7 @@ export const rejectExpenseById = (expenseId: string, role: "MANAGER" | "ADMIN", 
 };
 
 // Export/Report API functions
-export const exportToExcel = async (startDate: string, endDate: string): Promise<Blob> => {
+export const exportToExcel = async (startDate: string, endDate: string, displayCurrency?: string): Promise<Blob> => {
   const token = getAuthToken();
   const headers: Record<string, string> = {};
 
@@ -354,6 +371,10 @@ export const exportToExcel = async (startDate: string, endDate: string): Promise
   const search = new URLSearchParams();
   search.append("startDate", startDate);
   search.append("endDate", endDate);
+
+  if (displayCurrency) {
+    search.append("displayCurrency", displayCurrency);
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/reports/export/excel?${search.toString()}`, {
     method: "GET",
@@ -376,7 +397,7 @@ export const exportToExcel = async (startDate: string, endDate: string): Promise
   return response.blob();
 };
 
-export const exportToPDF = async (startDate: string, endDate: string): Promise<Blob> => {
+export const exportToPDF = async (startDate: string, endDate: string, displayCurrency?: string): Promise<Blob> => {
   const token = getAuthToken();
   const headers: Record<string, string> = {};
 
@@ -387,6 +408,10 @@ export const exportToPDF = async (startDate: string, endDate: string): Promise<B
   const search = new URLSearchParams();
   search.append("startDate", startDate);
   search.append("endDate", endDate);
+
+  if (displayCurrency) {
+    search.append("displayCurrency", displayCurrency);
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/reports/export/pdf?${search.toString()}`, {
     method: "GET",
@@ -418,6 +443,7 @@ export type AuthResponse = {
     email: string;
     role: string;
     companyId: string;
+    preferredCurrency?: string | null;
     avatarUrl?: string | null;
     googleAvatarUrl?: string | null;
   };
@@ -497,5 +523,49 @@ export const uploadMyAvatar = (file: File) => {
   return apiFetch<ApiUser>("/api/users/me/avatar", {
     method: "POST",
     body: formData,
+  });
+};
+
+// Currency types
+export type Currency = {
+  code: string;
+  name: string;
+  symbol: string;
+};
+
+export type Company = {
+  id: string;
+  name: string;
+  plan: string;
+  baseCurrency: string;
+  createdAt: string;
+};
+
+// Currency API functions
+export const getSupportedCurrencies = () => {
+  return apiFetch<Currency[]>("/api/company/currencies");
+};
+
+export const getCompanySettings = () => {
+  return apiFetch<Company>("/api/company/me");
+};
+
+
+export const fetchExchangeRate = (from: string, to: string) => {
+  const search = new URLSearchParams({ from, to });
+  return apiFetch<{ from: string; to: string; rate: number; provider: string; timestamp: string }>(`/api/company/rate?${search.toString()}`);
+};
+
+export const updateCompanyBaseCurrency = (baseCurrency: string) => {
+  return apiFetch<Company>("/api/company/currency", {
+    method: "PATCH",
+    body: JSON.stringify({ baseCurrency }),
+  });
+};
+
+export const updateUserPreferredCurrency = (preferredCurrency: string | null) => {
+  return apiFetch<ApiUser>("/api/users/me/currency", {
+    method: "PATCH",
+    body: JSON.stringify({ preferredCurrency }),
   });
 };

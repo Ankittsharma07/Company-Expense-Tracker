@@ -10,6 +10,7 @@ export interface User {
   email: string;
   role: Role;
   companyId: string;
+  preferredCurrency?: string | null;
   avatarUrl?: string | null;
   googleAvatarUrl?: string | null;
 }
@@ -30,6 +31,7 @@ interface AuthContextType {
   googleLogin: (token: string) => Promise<void>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
   error: string | null;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -55,6 +57,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = (updates: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+  };
+
+  const refreshUser = async () => {
+    try {
+      const userData = await api.fetchMe();
+      setUser({
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role as Role,
+        companyId: userData.companyId,
+        preferredCurrency: userData.preferredCurrency || null,
+        avatarUrl: userData.avatarUrl || null,
+        googleAvatarUrl: userData.googleAvatarUrl || null,
+      });
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+      throw err;
+    }
   };
 
   // Set up 401 handler
@@ -84,6 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: userData.email,
           role: userData.role as Role,
           companyId: userData.companyId,
+          preferredCurrency: userData.preferredCurrency || null,
           avatarUrl: userData.avatarUrl || null,
           googleAvatarUrl: userData.googleAvatarUrl || null,
         });
@@ -129,6 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: response.user.email,
         role: response.user.role as Role,
         companyId: response.user.companyId,
+        preferredCurrency: response.user.preferredCurrency || null,
         avatarUrl: response.user.avatarUrl || null,
         googleAvatarUrl: response.user.googleAvatarUrl || null,
       });
@@ -219,6 +242,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     googleLogin,
     logout,
     updateUser,
+    refreshUser,
     error,
     setError,
     clearError,

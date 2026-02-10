@@ -1,9 +1,27 @@
-﻿import { prisma } from "../../config/db.js";
-import { Prisma } from "@prisma/client";
+import { prisma } from "../../config/db.js";
+import { getConversionRate, getExpenseAmountInCurrency } from "../../services/currency/currency.service.js";
 
-const approvedStatuses = ["MANAGER_APPROVED", "ADMIN_APPROVED"];
+const normalizeCurrencyCode = (currency) => {
+  if (!currency || typeof currency !== "string") return null;
+  return currency.trim().toUpperCase();
+};
 
-export const monthlyTotalsService = async (companyId, year) => {
+const canConvertExpense = (expense, targetCurrency) => {
+  const display = normalizeCurrencyCode(targetCurrency);
+  const originalCurrency = normalizeCurrencyCode(expense.originalCurrency ?? expense.currency);
+  if (!display || !originalCurrency || !expense.exchangeRateBase || !expense.exchangeRates) return false;
+
+  const rate = getConversionRate({
+    fromCurrency: originalCurrency,
+    toCurrency: display,
+    exchangeRateBase: expense.exchangeRateBase,
+    exchangeRates: expense.exchangeRates,
+  });
+
+  return Boolean(rate);
+};
+
+export const monthlyTotalsService = async (companyId, year, displayCurrency) => {
   try {
     // Get last 6 months from current date
     const now = new Date();
@@ -25,16 +43,32 @@ export const monthlyTotalsService = async (companyId, year) => {
       select: {
         expenseDate: true,
         amount: true,
+        currency: true,
+        originalAmount: true,
+        originalCurrency: true,
+        baseAmount: true,
+        baseCurrency: true,
+        exchangeRateBase: true,
+        exchangeRates: true,
       },
     });
+
+    const normalizedDisplay = normalizeCurrencyCode(displayCurrency);
+    const fallbackCurrency = normalizeCurrencyCode(expenses[0]?.baseCurrency ?? expenses[0]?.currency) || normalizedDisplay || "USD";
+    const canConvertAll = normalizedDisplay
+      ? normalizedDisplay === fallbackCurrency || expenses.every((expense) => canConvertExpense(expense, normalizedDisplay))
+      : false;
+    const resolvedCurrency = canConvertAll ? normalizedDisplay : fallbackCurrency;
+    const targetCurrency = canConvertAll ? normalizedDisplay : undefined;
 
     // Group by month manually
     const monthlyMap = new Map();
 
     expenses.forEach((expense) => {
       const monthKey = new Date(expense.expenseDate).toISOString().slice(0, 7); // YYYY-MM
+      const amountInfo = getExpenseAmountInCurrency(expense, targetCurrency);
       const current = monthlyMap.get(monthKey) || 0;
-      monthlyMap.set(monthKey, current + Number(expense.amount));
+      monthlyMap.set(monthKey, current + Number(amountInfo.amount));
     });
 
     // Convert to array and sort
@@ -42,6 +76,7 @@ export const monthlyTotalsService = async (companyId, year) => {
       .map(([month, total]) => ({
         month: `${month}-01T00:00:00.000Z`, // Format as ISO date
         total: Number(total),
+        currency: resolvedCurrency,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
@@ -53,7 +88,7 @@ export const monthlyTotalsService = async (companyId, year) => {
   }
 };
 
-export const categoryTotalsService = async (companyId, from, to) => {
+export const categoryTotalsService = async (companyId, from, to, displayCurrency) => {
   try {
     const whereClause = {
       companyId,
@@ -74,15 +109,31 @@ export const categoryTotalsService = async (companyId, from, to) => {
       select: {
         category: true,
         amount: true,
+        currency: true,
+        originalAmount: true,
+        originalCurrency: true,
+        baseAmount: true,
+        baseCurrency: true,
+        exchangeRateBase: true,
+        exchangeRates: true,
       },
     });
+
+    const normalizedDisplay = normalizeCurrencyCode(displayCurrency);
+    const fallbackCurrency = normalizeCurrencyCode(expenses[0]?.baseCurrency ?? expenses[0]?.currency) || normalizedDisplay || "USD";
+    const canConvertAll = normalizedDisplay
+      ? normalizedDisplay === fallbackCurrency || expenses.every((expense) => canConvertExpense(expense, normalizedDisplay))
+      : false;
+    const resolvedCurrency = canConvertAll ? normalizedDisplay : fallbackCurrency;
+    const targetCurrency = canConvertAll ? normalizedDisplay : undefined;
 
     // Group by category manually
     const categoryMap = new Map();
 
     expenses.forEach((expense) => {
+      const amountInfo = getExpenseAmountInCurrency(expense, targetCurrency);
       const current = categoryMap.get(expense.category) || 0;
-      categoryMap.set(expense.category, current + Number(expense.amount));
+      categoryMap.set(expense.category, current + Number(amountInfo.amount));
     });
 
     // Convert to array and sort by total descending
@@ -90,6 +141,7 @@ export const categoryTotalsService = async (companyId, from, to) => {
       .map(([category, total]) => ({
         category,
         total: Number(total),
+        currency: resolvedCurrency,
       }))
       .sort((a, b) => b.total - a.total);
 
