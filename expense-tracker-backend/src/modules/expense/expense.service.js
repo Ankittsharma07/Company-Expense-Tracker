@@ -1,5 +1,6 @@
 ﻿import { prisma } from "../../config/db.js";
 import { buildExpenseCurrencyFields, convertAmount, getConversionRate } from "../../services/currency/currency.service.js";
+import { shouldSkipManagerApproval, promotePendingManagerToAdmin } from "../../services/approvalFlow.js";
 
 export const createExpenseService = async (companyId, userId, data) => {
   // Fetch company to get baseCurrency
@@ -24,6 +25,8 @@ export const createExpenseService = async (companyId, userId, data) => {
     throw new Error(`Unable to create expense: ${error.message}. Please try again or contact support.`);
   }
 
+  const skipManager = await shouldSkipManagerApproval(companyId);
+
   return prisma.expense.create({
     data: {
       companyId,
@@ -47,11 +50,16 @@ export const createExpenseService = async (companyId, userId, data) => {
       receiptType: data.receiptType || null,
       uploadedAt: data.uploadedAt || null,
       expenseDate: data.expenseDate ? new Date(data.expenseDate) : new Date(),
+      status: skipManager ? "PENDING_ADMIN" : "PENDING_MANAGER",
     },
   });
 };
 
 export const listExpensesService = async ({ companyId, user, filters }) => {
+  if (user.role === "ADMIN") {
+    await promotePendingManagerToAdmin(companyId);
+  }
+
   const where = {
     companyId,
     ...(user.role === "EMPLOYEE" ? { userId: user.id } : {}),
