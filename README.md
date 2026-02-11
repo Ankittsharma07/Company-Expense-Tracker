@@ -541,7 +541,7 @@ Auth: `Authorization: Bearer <JWT>`
 ## Environment Variables
 Frontend `.env` (root):
 ```
-VITE_API_BASE_URL=http://localhost:4000
+VITE_API_URL=http://localhost:4000
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
@@ -549,11 +549,12 @@ Backend `.env` (`expense-tracker-backend/.env`):
 ```
 PORT=4000
 DATABASE_URL=postgresql://user:password@localhost:5432/expense_tracker
+DIRECT_URL=postgresql://user:password@localhost:5432/expense_tracker
 JWT_SECRET=supersecret
 JWT_EXPIRES_IN=7d
 BCRYPT_SALT_ROUNDS=10
 FREE_PLAN_EMPLOYEE_LIMIT=5
-CORS_ORIGIN=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
 
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
@@ -570,7 +571,7 @@ FASTFOREX_API_KEY=...
 FASTFOREX_BASE_URL=https://api.fastforex.io
 
 GOOGLE_CLIENT_ID=your_google_client_id
-APP_BASE_URL=http://localhost:5173
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 ## Database migration
@@ -603,7 +604,7 @@ Example production checklist:
 1. Provision PostgreSQL (managed service recommended)
 1. Set backend env vars (Cloudinary, SMTP, fastFOREX, JWT)
 1. Set frontend env vars (API base URL, Google client ID)
-1. Ensure CORS and `APP_BASE_URL` match your frontend domain
+1. Ensure `FRONTEND_URL` matches your frontend domain
 1. Run Prisma migrations in production
 
 # Testing

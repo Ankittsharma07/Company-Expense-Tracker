@@ -1,10 +1,13 @@
--- Update Company base currency default
+-- Ensure Company base currency exists
+ALTER TABLE "Company" ADD COLUMN IF NOT EXISTS "baseCurrency" TEXT NOT NULL DEFAULT 'INR';
 ALTER TABLE "Company" ALTER COLUMN "baseCurrency" SET DEFAULT 'INR';
 
 -- Add new expense currency fields
-ALTER TABLE "Expense" ADD COLUMN "originalAmount" DECIMAL(12, 2);
-ALTER TABLE "Expense" ADD COLUMN "originalCurrency" TEXT;
-ALTER TABLE "Expense" ADD COLUMN "baseCurrency" TEXT;
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "exchangeRate" DECIMAL(18, 8);
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "baseAmount" DECIMAL(12, 2);
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "originalAmount" DECIMAL(12, 2);
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "originalCurrency" TEXT;
+ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "baseCurrency" TEXT;
 
 -- Backfill existing expenses
 UPDATE "Expense" e

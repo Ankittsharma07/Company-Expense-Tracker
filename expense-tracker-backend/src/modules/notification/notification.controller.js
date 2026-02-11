@@ -26,7 +26,7 @@ export const listNotifications = async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
-    return res.status(500).json({ message: error.message || "Failed to fetch notifications" });
+    return res.status(500).json({ message: "Failed to fetch notifications" });
   }
 };
 
@@ -49,7 +49,7 @@ export const getUnreadCount = async (req, res) => {
     });
     return res.json(count);
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Failed to fetch unread count" });
+    return res.status(500).json({ message: "Failed to fetch unread count" });
   }
 };
 
@@ -65,6 +65,6 @@ export const listNotificationAuditLogs = async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
-    return res.status(500).json({ message: error.message || "Failed to fetch audit logs" });
+    return res.status(500).json({ message: "Failed to fetch audit logs" });
   }
 };

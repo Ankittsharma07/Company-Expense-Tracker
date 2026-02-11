@@ -1,4 +1,10 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4010";
+const getApiBaseUrl = () => {
+  const raw = import.meta.env.VITE_API_URL;
+  if (!raw) {
+    throw new Error("VITE_API_URL is not configured");
+  }
+  return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+};
 
 const AUTH_TOKEN_KEY = "auth_token";
 
@@ -39,7 +45,8 @@ const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> 
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const apiBaseUrl = getApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}${path}`, {
       ...options,
       headers,
       signal: controller.signal,
@@ -376,7 +383,8 @@ export const exportToExcel = async (startDate: string, endDate: string, displayC
     search.append("displayCurrency", displayCurrency);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/reports/export/excel?${search.toString()}`, {
+  const apiBaseUrl = getApiBaseUrl();
+  const response = await fetch(`${apiBaseUrl}/api/reports/export/excel?${search.toString()}`, {
     method: "GET",
     headers,
   });
@@ -413,7 +421,8 @@ export const exportToPDF = async (startDate: string, endDate: string, displayCur
     search.append("displayCurrency", displayCurrency);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/reports/export/pdf?${search.toString()}`, {
+  const apiBaseUrl = getApiBaseUrl();
+  const response = await fetch(`${apiBaseUrl}/api/reports/export/pdf?${search.toString()}`, {
     method: "GET",
     headers,
   });

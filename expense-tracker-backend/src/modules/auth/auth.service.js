@@ -10,9 +10,9 @@ import { env } from "../../config/env.js";
 const PASSWORD_RESET_EXPIRY_MINUTES = 15;
 
 const getAppBaseUrl = () => {
-  const raw = env.appBaseUrl || "http://localhost:5173";
-  if (raw === "*") {
-    return "http://localhost:5173";
+  const raw = env.frontendUrl;
+  if (!raw) {
+    throw new Error("FRONTEND_URL is not configured");
   }
   return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 };
@@ -117,10 +117,13 @@ export const googleLoginService = async (token) => {
 
   try {
     // Try verifying as ID Token first
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    if (!env.googleClientId) {
+      throw new Error("GOOGLE_CLIENT_ID is not configured");
+    }
+    const client = new OAuth2Client(env.googleClientId);
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: env.googleClientId,
     });
     const payload = ticket.getPayload();
     email = payload.email;

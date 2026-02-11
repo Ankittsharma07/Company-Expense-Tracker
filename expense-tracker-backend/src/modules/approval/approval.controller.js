@@ -59,7 +59,7 @@ export const getPendingApprovals = async (req, res) => {
     return res.json(expenses);
   } catch (error) {
     console.error("Get pending approvals error:", error);
-    return res.status(500).json({ message: error.message || "Failed to fetch pending approvals" });
+    return res.status(500).json({ message: "Failed to fetch pending approvals" });
   }
 };
 
@@ -73,6 +73,6 @@ export const getApprovalCounts = async (req, res) => {
     return res.json(counts);
   } catch (error) {
     console.error("Get approval counts error:", error);
-    return res.status(500).json({ message: error.message || "Failed to fetch approval counts" });
+    return res.status(500).json({ message: "Failed to fetch approval counts" });
   }
 };

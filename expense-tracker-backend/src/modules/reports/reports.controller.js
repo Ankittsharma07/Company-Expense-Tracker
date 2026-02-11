@@ -32,7 +32,7 @@ export const exportExcel = async (req, res) => {
       return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD", errors: error.errors });
     }
     console.error("Excel export error:", error);
-    return res.status(500).json({ message: error.message || "Failed to export to Excel" });
+    return res.status(500).json({ message: "Failed to export to Excel" });
   }
 };
 
@@ -57,6 +57,6 @@ export const exportPDF = async (req, res) => {
       return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD", errors: error.errors });
     }
     console.error("PDF export error:", error);
-    return res.status(500).json({ message: error.message || "Failed to export to PDF" });
+    return res.status(500).json({ message: "Failed to export to PDF" });
   }
 };

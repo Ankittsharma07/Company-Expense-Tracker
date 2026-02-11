@@ -4,9 +4,10 @@
  */
 
 import { POPULAR_CURRENCIES } from "./currency.constants.js";
+import { env } from "../../config/env.js";
 
-const FASTFOREX_API_KEY = process.env.FASTFOREX_API_KEY;
-const FASTFOREX_BASE_URL = process.env.FASTFOREX_BASE_URL || "https://api.fastforex.io";
+const FASTFOREX_API_KEY = env.fastForexApiKey;
+const FASTFOREX_BASE_URL = env.fastForexBaseUrl;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const ENTRY_CURRENCIES = ["USD", "INR"];

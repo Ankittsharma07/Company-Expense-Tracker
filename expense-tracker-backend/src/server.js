@@ -1,5 +1,13 @@
-﻿import app from "./app.js";
-import { env } from "./config/env.js";
+import { env, validateEnv } from "./config/env.js";
+
+try {
+  validateEnv();
+} catch (error) {
+  console.error("Environment validation failed:", error.message);
+  process.exit(1);
+}
+
+const { default: app } = await import("./app.js");
 
 const server = app.listen(env.port, () => {
   console.log(`Expense Tracker API running on port ${env.port}`);

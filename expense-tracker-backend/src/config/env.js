@@ -2,30 +2,52 @@
 
 dotenv.config();
 
-const requireEnv = (key) => {
+const missingKeys = [];
+
+const readRequiredEnv = (key) => {
   const value = process.env[key];
   if (!value) {
-    throw new Error(`Missing required env var: ${key}`);
+    missingKeys.push(key);
+    return "";
   }
   return value;
 };
 
+const normalizeUrl = (value) => {
+  if (!value) return "";
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+};
+
 export const env = {
+  nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 4000),
-  databaseUrl: requireEnv("DATABASE_URL"),
-  jwtSecret: requireEnv("JWT_SECRET"),
+  databaseUrl: readRequiredEnv("DATABASE_URL"),
+  directUrl: readRequiredEnv("DIRECT_URL"),
+  jwtSecret: readRequiredEnv("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   bcryptSaltRounds: Number(process.env.BCRYPT_SALT_ROUNDS || 10),
   freePlanEmployeeLimit: Number(process.env.FREE_PLAN_EMPLOYEE_LIMIT || 5),
-  corsOrigin: process.env.CORS_ORIGIN || "*",
-  cloudinaryCloudName: requireEnv("CLOUDINARY_CLOUD_NAME"),
-  cloudinaryApiKey: requireEnv("CLOUDINARY_API_KEY"),
-  cloudinaryApiSecret: requireEnv("CLOUDINARY_API_SECRET"),
+  frontendUrl: normalizeUrl(readRequiredEnv("FRONTEND_URL")),
+  corsOrigin: normalizeUrl(readRequiredEnv("FRONTEND_URL")),
+  cloudinaryCloudName: readRequiredEnv("CLOUDINARY_CLOUD_NAME"),
+  cloudinaryApiKey: readRequiredEnv("CLOUDINARY_API_KEY"),
+  cloudinaryApiSecret: readRequiredEnv("CLOUDINARY_API_SECRET"),
+  fastForexApiKey: readRequiredEnv("FASTFOREX_API_KEY"),
+  fastForexBaseUrl: process.env.FASTFOREX_BASE_URL || "https://api.fastforex.io",
+  googleClientId: readRequiredEnv("GOOGLE_CLIENT_ID"),
+  googleClientSecret: readRequiredEnv("GOOGLE_CLIENT_SECRET"),
   smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
   smtpPort: Number(process.env.SMTP_PORT || 465),
   smtpSecure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : true,
   smtpUser: process.env.SMTP_USER || "",
   smtpPass: process.env.SMTP_PASS || "",
   emailFrom: process.env.EMAIL_FROM || "Expense Tracker <no-reply@expense-tracker.com>",
-  appBaseUrl: process.env.APP_BASE_URL || process.env.CORS_ORIGIN || "http://localhost:5173",
+};
+
+export const validateEnv = () => {
+  if (missingKeys.length === 0) {
+    return;
+  }
+  const uniqueMissing = [...new Set(missingKeys)];
+  throw new Error(`Missing required env var(s): ${uniqueMissing.join(", ")}`);
 };
