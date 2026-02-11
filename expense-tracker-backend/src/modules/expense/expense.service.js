@@ -124,7 +124,10 @@ export const updateExpenseService = async ({ companyId, userId, expenseId, data 
     throw new Error("Expense not found");
   }
   if (expense.status !== "PENDING_MANAGER" && expense.status !== "PENDING") {
-    throw new Error("Only pending manager expenses can be updated");
+    const allowPendingAdmin = expense.status === "PENDING_ADMIN" && (await shouldSkipManagerApproval(companyId));
+    if (!allowPendingAdmin) {
+      throw new Error("Only pending manager expenses can be updated");
+    }
   }
 
   const nextAmount = data.amount ?? expense.originalAmount ?? expense.amount;
@@ -204,7 +207,10 @@ export const deleteExpenseService = async ({ companyId, userId, expenseId }) => 
     throw new Error("Expense not found");
   }
   if (expense.status !== "PENDING_MANAGER" && expense.status !== "PENDING") {
-    throw new Error("Only pending manager expenses can be deleted");
+    const allowPendingAdmin = expense.status === "PENDING_ADMIN" && (await shouldSkipManagerApproval(companyId));
+    if (!allowPendingAdmin) {
+      throw new Error("Only pending manager expenses can be deleted");
+    }
   }
 
   await prisma.approval.deleteMany({ where: { expenseId } });

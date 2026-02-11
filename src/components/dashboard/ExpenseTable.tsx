@@ -94,7 +94,10 @@ export const ExpenseTable = ({
           {!isLoading && !error && rows.map((expense) => {
             const statusKey = (expense.status || '').toString().toUpperCase();
             const statusConfig = STATUS_MAP[statusKey] || { label: expense.status, badge: 'default' };
-            const isEditablePending = statusKey === 'PENDING_MANAGER' || statusKey === 'PENDING';
+            const isEditablePending =
+              statusKey === 'PENDING_MANAGER' ||
+              statusKey === 'PENDING_ADMIN' ||
+              statusKey === 'PENDING';
             const isApprovalStatus =
               statusKey === 'PENDING_MANAGER' ||
               statusKey === 'PENDING_ADMIN' ||
