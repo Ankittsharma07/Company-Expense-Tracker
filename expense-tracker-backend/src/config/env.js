@@ -42,6 +42,7 @@ export const env = {
   smtpUser: process.env.SMTP_USER || "",
   smtpPass: process.env.SMTP_PASS || "",
   emailFrom: process.env.EMAIL_FROM || "Expense Tracker <no-reply@expense-tracker.com>",
+  brevoApiKey: process.env.BREVO_API_KEY || "",
 };
 
 export const validateEnv = () => {
