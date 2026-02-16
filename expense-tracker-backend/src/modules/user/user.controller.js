@@ -101,7 +101,6 @@ export const updateMyAvatar = async (req, res) => {
       mimeType: req.file.mimetype,
       companyId: req.user.companyId,
       userId: req.user.id,
-      originalName: req.file.originalname,
     });
 
     const user = await updateUserProfileService(req.user.companyId, req.user.id, {

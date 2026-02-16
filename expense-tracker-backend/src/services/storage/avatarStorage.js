@@ -9,7 +9,7 @@ cloudinary.config({
 
 const folderBase = "expense-tracker/avatars";
 
-export const uploadAvatar = async ({ buffer, mimeType, companyId, userId, originalName }) => {
+export const uploadAvatar = async ({ buffer, mimeType, companyId, userId }) => {
   try {
     const folder = `${folderBase}/${companyId}/${userId}`;
 
@@ -18,9 +18,7 @@ export const uploadAvatar = async ({ buffer, mimeType, companyId, userId, origin
         {
           folder,
           resource_type: "image",
-          use_filename: true,
           unique_filename: true,
-          filename_override: originalName,
           transformation: [{ width: 256, height: 256, crop: "fill", gravity: "face" }],
         },
         (error, uploadResult) => {

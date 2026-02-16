@@ -4,8 +4,20 @@ dotenv.config();
 
 const missingKeys = [];
 
+const sanitizeEnvValue = (value) => {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+};
+
 const readRequiredEnv = (key) => {
-  const value = process.env[key];
+  const value = sanitizeEnvValue(process.env[key]);
   if (!value) {
     missingKeys.push(key);
     return "";
@@ -32,9 +44,9 @@ export const env = {
   cloudinaryCloudName: readRequiredEnv("CLOUDINARY_CLOUD_NAME"),
   cloudinaryApiKey: readRequiredEnv("CLOUDINARY_API_KEY"),
   cloudinaryApiSecret: readRequiredEnv("CLOUDINARY_API_SECRET"),
-  exchangeRateApiKey: process.env.EXCHANGERATE_API_KEY || process.env.FASTFOREX_API_KEY || "",
-  exchangeRateApiBaseUrl:
-    process.env.EXCHANGERATE_API_BASE_URL || "https://v6.exchangerate-api.com/v6",
+  exchangeRateApiKey: sanitizeEnvValue(process.env.EXCHANGERATE_API_KEY || process.env.FASTFOREX_API_KEY),
+  exchangeRateApiBaseUrl: sanitizeEnvValue(process.env.EXCHANGERATE_API_BASE_URL)
+    || "https://v6.exchangerate-api.com/v6",
   googleClientId: readRequiredEnv("GOOGLE_CLIENT_ID"),
   googleClientSecret: readRequiredEnv("GOOGLE_CLIENT_SECRET"),
   smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
