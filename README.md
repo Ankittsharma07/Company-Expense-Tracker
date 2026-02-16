@@ -27,7 +27,7 @@ This repository contains a production-ready SaaS Expense Tracker with:
 - Database: PostgreSQL + Prisma
 - Authentication: Email/Password + Google OAuth
 - Notifications: In-app + Email via Nodemailer (Gmail SMTP)
-- Exchange Rates: fastFOREX API
+- Exchange Rates: ExchangeRate-API
 - File Storage: Cloudinary
 - Multi-currency support with stored historical FX snapshots
 - Multi-tenant company support
@@ -61,7 +61,7 @@ This repository contains a production-ready SaaS Expense Tracker with:
         │                         └─────────────────────┘
         │
         ├── Google OAuth (verify token)
-        ├── fastFOREX (FX snapshots)
+        ├── ExchangeRate-API (FX snapshots)
         ├── Cloudinary (receipts + avatars)
         └── Gmail SMTP (Nodemailer)
 ```
@@ -182,9 +182,9 @@ model Expense {
 # Currency System
 - One base currency per company (`Company.baseCurrency`)
 - Each expense stores original amount + currency and a stored FX snapshot (`exchangeRates`)
-- `baseAmount` is stored at create time using fastFOREX
+- `baseAmount` is stored at create time using ExchangeRate-API
 - Display conversions use stored snapshot to ensure historical consistency
-- fastFOREX is used at expense creation or via backfill script
+- ExchangeRate-API is used at expense creation or via backfill script
 
 **Example conversion logic**
 ```ts
@@ -312,7 +312,7 @@ Auth: `Authorization: Bearer <JWT>`
 - Request: Query params `from`, `to`
 - Response:
 ```json
-{ "from": "USD", "to": "INR", "rate": 82.3, "provider": "fastFOREX", "timestamp": "2026-02-10T..." }
+{ "from": "USD", "to": "INR", "rate": 82.3, "provider": "ExchangeRate-API", "timestamp": "2026-02-10T..." }
 ```
 - Errors: 400 validation
 
@@ -535,7 +535,7 @@ Auth: `Authorization: Bearer <JWT>`
 - Node.js 18+ (recommended)
 - PostgreSQL 14+
 - Cloudinary account
-- fastFOREX API key
+- ExchangeRate-API key
 - Google OAuth credentials
 
 ## Environment Variables
@@ -567,8 +567,8 @@ SMTP_USER=your_gmail_user
 SMTP_PASS=your_gmail_app_password
 EMAIL_FROM=Expense Tracker <no-reply@expense-tracker.com>
 
-FASTFOREX_API_KEY=...
-FASTFOREX_BASE_URL=https://api.fastforex.io
+EXCHANGERATE_API_KEY=...
+EXCHANGERATE_API_BASE_URL=https://v6.exchangerate-api.com/v6
 
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
@@ -602,7 +602,7 @@ Example production checklist:
 1. Build frontend and serve via CDN or static hosting (Netlify/Vercel/S3)
 1. Deploy backend to a Node runtime (Render, AWS ECS, Fly.io, etc.)
 1. Provision PostgreSQL (managed service recommended)
-1. Set backend env vars (Cloudinary, SMTP, fastFOREX, JWT)
+1. Set backend env vars (Cloudinary, SMTP/Gmail API, ExchangeRate-API, JWT)
 1. Set frontend env vars (API base URL, Google client ID)
 1. Ensure `FRONTEND_URL` matches your frontend domain
 1. Run Prisma migrations in production
@@ -616,7 +616,7 @@ Testing scaffolding is not included yet.
 # Notes and Best Practices
 - Enforce least-privilege: Admin-only routes are protected by `requireRole("ADMIN")`.
 - Validate currency logic carefully. Each expense stores an FX snapshot for consistent historical reporting.
-- Keep `FASTFOREX_API_KEY` and `SMTP_PASS` in secure secret stores.
+- Keep `EXCHANGERATE_API_KEY` and email credentials in secure secret stores.
 - Use Cloudinary signed uploads for large-scale production workloads.
 - Indexes are defined in Prisma for multi-tenant query performance.
 - Consider adding refresh tokens and rotation for longer-lived sessions.

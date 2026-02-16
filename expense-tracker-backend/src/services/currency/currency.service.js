@@ -1,13 +1,14 @@
 /**
- * Currency Service - fastFOREX Integration
+ * Currency Service - ExchangeRate-API Integration
  * Handles exchange rate fetching and stored-rate conversions
  */
 
 import { POPULAR_CURRENCIES } from "./currency.constants.js";
 import { env } from "../../config/env.js";
 
-const FASTFOREX_API_KEY = env.fastForexApiKey;
-const FASTFOREX_BASE_URL = env.fastForexBaseUrl;
+const EXCHANGE_RATE_API_KEY = env.exchangeRateApiKey;
+const EXCHANGE_RATE_API_BASE_URL = env.exchangeRateApiBaseUrl.replace(/\/$/, "");
+const EXCHANGE_RATE_PROVIDER = "ExchangeRate-API";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const ENTRY_CURRENCIES = ["USD", "INR"];
@@ -76,15 +77,68 @@ const ensureSupportedEntryCurrency = (currency) => {
   }
 };
 
+const buildLatestUrl = (base) => {
+  return `${EXCHANGE_RATE_API_BASE_URL}/${EXCHANGE_RATE_API_KEY}/latest/${base}`;
+};
+
+const buildHistoryUrl = (base, dateValue) => {
+  const year = dateValue.getUTCFullYear();
+  const month = dateValue.getUTCMonth() + 1;
+  const day = dateValue.getUTCDate();
+  return `${EXCHANGE_RATE_API_BASE_URL}/${EXCHANGE_RATE_API_KEY}/history/${base}/${year}/${month}/${day}`;
+};
+
+const parseJsonSafely = async (response) => {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
+
+const fetchExchangeRateApi = async ({ url, context }) => {
+  const response = await fetch(url);
+  const body = await parseJsonSafely(response);
+
+  if (!response.ok) {
+    const errorText = body ? JSON.stringify(body) : await response.text();
+    throw new Error(`ExchangeRate API error (${response.status}): ${errorText}`);
+  }
+
+  if (body?.result === "error") {
+    const errorType = body["error-type"] || "unknown-error";
+    throw new Error(`ExchangeRate API error (${errorType})`);
+  }
+
+  if (body?.result && body.result !== "success") {
+    throw new Error(`Unexpected ExchangeRate API response for ${context}`);
+  }
+
+  return body;
+};
+
+const getSnapshotTimestamp = (data, fallbackDate = new Date()) => {
+  if (Number.isFinite(Number(data?.time_last_update_unix))) {
+    return new Date(Number(data.time_last_update_unix) * 1000);
+  }
+  if (data?.time_last_update_utc) {
+    const parsed = new Date(data.time_last_update_utc);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return fallbackDate;
+};
+
 /**
- * Fetch exchange rate from fastFOREX API (single pair)
+ * Fetch exchange rate from ExchangeRate-API (single pair)
  * @param {string} fromCurrency - Source currency code (e.g., 'USD')
  * @param {string} toCurrency - Target currency code (e.g., 'EUR')
  * @returns {Promise<number>} Exchange rate
  */
 export const fetchExchangeRate = async (fromCurrency, toCurrency) => {
-  if (!FASTFOREX_API_KEY) {
-    throw new Error("FASTFOREX_API_KEY is not configured");
+  if (!EXCHANGE_RATE_API_KEY) {
+    throw new Error("EXCHANGERATE_API_KEY is not configured");
   }
 
   const from = normalizeCurrencyCode(fromCurrency);
@@ -94,53 +148,37 @@ export const fetchExchangeRate = async (fromCurrency, toCurrency) => {
     throw new Error("Invalid currency code");
   }
 
-  // If currencies are the same, return 1
   if (from === to) {
     return 1.0;
   }
 
-  // Check cache first
   const cacheKey = `${from}_${to}`;
   const cached = rateCache.get(cacheKey);
-
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     console.log(`[CurrencyService] Using cached rate for ${cacheKey}: ${cached.rate}`);
     return cached.rate;
   }
 
   try {
-    // Fetch from fastFOREX API
-    const url = `${FASTFOREX_BASE_URL}/convert?from=${from}&to=${to}&amount=1&api_key=${FASTFOREX_API_KEY}`;
+    const url = buildLatestUrl(from);
+    console.log(`[CurrencyService] Fetching exchange rate (${EXCHANGE_RATE_PROVIDER}): ${from} -> ${to}`);
 
-    console.log(`[CurrencyService] Fetching exchange rate (fastFOREX): ${from} -> ${to}`);
+    const data = await fetchExchangeRateApi({ url, context: `${from}->${to}` });
+    const rate = Number(data?.conversion_rates?.[to]);
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`fastFOREX API error (${response.status}): ${errorText}`);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error(`Invalid exchange rate received for ${from} -> ${to}`);
     }
 
-    const data = await response.json();
-
-    // fastFOREX response format: { "base": "USD", "result": { "EUR": 0.85 }, "ms": 1 }
-    const rate = data?.result?.[to];
-
-    if (!rate || isNaN(rate)) {
-      throw new Error(`Invalid exchange rate received from fastFOREX for ${from} -> ${to}`);
-    }
-
-    // Cache the rate
     rateCache.set(cacheKey, {
       rate,
       timestamp: Date.now(),
     });
 
     console.log(`[CurrencyService] Fetched and cached rate: ${from} -> ${to} = ${rate}`);
-
     return rate;
   } catch (error) {
-    console.error(`[CurrencyService] Error fetching exchange rate:`, error);
+    console.error("[CurrencyService] Error fetching exchange rate:", error);
     throw new Error(`Failed to fetch exchange rate from ${from} to ${to}: ${error.message}`);
   }
 };
@@ -155,24 +193,18 @@ export const fetchExchangeRatesSnapshot = async ({
   baseCurrency = DEFAULT_EXCHANGE_RATE_BASE,
   targetCurrencies = SUPPORTED_CURRENCY_CODES,
 } = {}) => {
-  if (!FASTFOREX_API_KEY) {
-    throw new Error("FASTFOREX_API_KEY is not configured");
+  if (!EXCHANGE_RATE_API_KEY) {
+    throw new Error("EXCHANGERATE_API_KEY is not configured");
   }
 
   const base = normalizeCurrencyCode(baseCurrency) || DEFAULT_EXCHANGE_RATE_BASE;
 
   try {
-    const url = `${FASTFOREX_BASE_URL}/fetch-all?from=${base}&api_key=${FASTFOREX_API_KEY}`;
-    console.log(`[CurrencyService] Fetching FX snapshot (fastFOREX): base ${base}`);
+    const url = buildLatestUrl(base);
+    console.log(`[CurrencyService] Fetching FX snapshot (${EXCHANGE_RATE_PROVIDER}): base ${base}`);
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`fastFOREX API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    const rawRates = data?.results || data?.result || data?.rates;
+    const data = await fetchExchangeRateApi({ url, context: `snapshot:${base}` });
+    const rawRates = data?.conversion_rates || data?.rates;
     const filteredRates = buildFilteredRates({
       base,
       rawRates,
@@ -180,14 +212,14 @@ export const fetchExchangeRatesSnapshot = async ({
     });
 
     if (!filteredRates) {
-      throw new Error("Invalid exchange rate snapshot received from fastFOREX");
+      throw new Error("Invalid exchange rate snapshot received from ExchangeRate API");
     }
 
     return {
       baseCurrency: base,
       rates: filteredRates,
-      timestamp: data?.updated ? new Date(data.updated) : new Date(),
-      provider: "fastFOREX",
+      timestamp: getSnapshotTimestamp(data),
+      provider: EXCHANGE_RATE_PROVIDER,
     };
   } catch (error) {
     console.error("[CurrencyService] Error fetching FX snapshot:", error);
@@ -207,8 +239,8 @@ export const fetchHistoricalExchangeRatesSnapshot = async ({
   baseCurrency = DEFAULT_EXCHANGE_RATE_BASE,
   targetCurrencies = SUPPORTED_CURRENCY_CODES,
 } = {}) => {
-  if (!FASTFOREX_API_KEY) {
-    throw new Error("FASTFOREX_API_KEY is not configured");
+  if (!EXCHANGE_RATE_API_KEY) {
+    throw new Error("EXCHANGERATE_API_KEY is not configured");
   }
 
   if (!date) {
@@ -221,20 +253,15 @@ export const fetchHistoricalExchangeRatesSnapshot = async ({
     throw new Error("Invalid historical date");
   }
 
-  const dateString = dateValue.toISOString().slice(0, 10);
-
   try {
-    const url = `${FASTFOREX_BASE_URL}/historical?from=${base}&date=${dateString}&api_key=${FASTFOREX_API_KEY}`;
-    console.log(`[CurrencyService] Fetching historical FX snapshot (fastFOREX): base ${base} date ${dateString}`);
+    const url = buildHistoryUrl(base, dateValue);
+    const dateString = dateValue.toISOString().slice(0, 10);
+    console.log(
+      `[CurrencyService] Fetching historical FX snapshot (${EXCHANGE_RATE_PROVIDER}): base ${base} date ${dateString}`
+    );
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`fastFOREX API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    const rawRates = data?.results || data?.result || data?.rates;
+    const data = await fetchExchangeRateApi({ url, context: `history:${base}` });
+    const rawRates = data?.conversion_rates || data?.rates;
     const filteredRates = buildFilteredRates({
       base,
       rawRates,
@@ -242,18 +269,16 @@ export const fetchHistoricalExchangeRatesSnapshot = async ({
     });
 
     if (!filteredRates) {
-      throw new Error("Invalid historical exchange rate snapshot received from fastFOREX");
+      throw new Error("Invalid historical exchange rate snapshot received from ExchangeRate API");
     }
 
-    const timestamp = data?.date
-      ? new Date(`${data.date}T00:00:00.000Z`)
-      : new Date(`${dateString}T00:00:00.000Z`);
+    const timestamp = getSnapshotTimestamp(data, new Date(`${dateString}T00:00:00.000Z`));
 
     return {
       baseCurrency: base,
       rates: filteredRates,
       timestamp,
-      provider: "fastFOREX",
+      provider: EXCHANGE_RATE_PROVIDER,
     };
   } catch (error) {
     console.error("[CurrencyService] Error fetching historical FX snapshot:", error);
@@ -272,7 +297,7 @@ export const getExchangeRateWithMetadata = async (fromCurrency, toCurrency) => {
 
   return {
     rate,
-    provider: fromCurrency === toCurrency ? "NONE" : "fastFOREX",
+    provider: fromCurrency === toCurrency ? "NONE" : EXCHANGE_RATE_PROVIDER,
     timestamp: new Date(),
   };
 };

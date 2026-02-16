@@ -32,8 +32,9 @@ export const env = {
   cloudinaryCloudName: readRequiredEnv("CLOUDINARY_CLOUD_NAME"),
   cloudinaryApiKey: readRequiredEnv("CLOUDINARY_API_KEY"),
   cloudinaryApiSecret: readRequiredEnv("CLOUDINARY_API_SECRET"),
-  fastForexApiKey: readRequiredEnv("FASTFOREX_API_KEY"),
-  fastForexBaseUrl: process.env.FASTFOREX_BASE_URL || "https://api.fastforex.io",
+  exchangeRateApiKey: process.env.EXCHANGERATE_API_KEY || process.env.FASTFOREX_API_KEY || "",
+  exchangeRateApiBaseUrl:
+    process.env.EXCHANGERATE_API_BASE_URL || "https://v6.exchangerate-api.com/v6",
   googleClientId: readRequiredEnv("GOOGLE_CLIENT_ID"),
   googleClientSecret: readRequiredEnv("GOOGLE_CLIENT_SECRET"),
   smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -43,7 +44,15 @@ export const env = {
   smtpPass: process.env.SMTP_PASS || "",
   emailFrom: process.env.EMAIL_FROM || "Expense Tracker <no-reply@expense-tracker.com>",
   brevoApiKey: process.env.BREVO_API_KEY || "",
+  gmailClientId: process.env.GMAIL_CLIENT_ID || "",
+  gmailClientSecret: process.env.GMAIL_CLIENT_SECRET || "",
+  gmailRefreshToken: process.env.GMAIL_REFRESH_TOKEN || "",
+  gmailSenderEmail: process.env.GMAIL_SENDER_EMAIL || "",
 };
+
+if (!env.exchangeRateApiKey) {
+  missingKeys.push("EXCHANGERATE_API_KEY");
+}
 
 export const validateEnv = () => {
   if (missingKeys.length === 0) {
