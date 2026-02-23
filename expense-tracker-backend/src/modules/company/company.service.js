@@ -19,6 +19,14 @@ export const updatePlanService = async (companyId, plan) => {
   });
 };
 
+export const updateCompanyNameService = async (companyId, name) => {
+  return prisma.company.update({
+    where: { id: companyId },
+    data: { name },
+    select: { id: true, name: true, plan: true, baseCurrency: true, createdAt: true },
+  });
+};
+
 export const updateBaseCurrencyService = async (companyId, baseCurrency) => {
   const expenseCount = await prisma.expense.count({ where: { companyId } });
   if (expenseCount > 0) {

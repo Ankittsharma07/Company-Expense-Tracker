@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { resolveAvatarUrl } from '../lib/avatar';
-import { uploadMyAvatar, getSupportedCurrencies, getCompanySettings, updateCompanyBaseCurrency, updateUserPreferredCurrency, type Currency, type Company } from '../lib/api';
+import { uploadMyAvatar, getSupportedCurrencies, getCompanySettings, updateCompanyBaseCurrency, updateCompanyName, updateUserPreferredCurrency, type Currency, type Company } from '../lib/api';
 import { RoleBadge } from '../components/ui/RoleBadge';
 import { Globe, Building2 } from 'lucide-react';
 
@@ -22,6 +22,12 @@ export const SettingsPage = () => {
   const [isSavingBaseCurrency, setIsSavingBaseCurrency] = useState(false);
   const [isSavingPreferredCurrency, setIsSavingPreferredCurrency] = useState(false);
   const [currencyError, setCurrencyError] = useState<string | null>(null);
+
+  // Company name state
+  const [companyNameInput, setCompanyNameInput] = useState('');
+  const [isSavingCompanyName, setIsSavingCompanyName] = useState(false);
+  const [companyNameError, setCompanyNameError] = useState<string | null>(null);
+  const [companyNameSuccess, setCompanyNameSuccess] = useState(false);
 
   const currentAvatar = useMemo(() => {
     if (!user) return '';
@@ -43,6 +49,7 @@ export const SettingsPage = () => {
         setCurrencies(currenciesData);
         setCompany(companyData);
         setSelectedBaseCurrency(companyData.baseCurrency);
+        setCompanyNameInput(companyData.name);
         setSelectedPreferredCurrency(user?.preferredCurrency || null);
       } catch (err) {
         console.error('Failed to load currency data:', err);
@@ -88,6 +95,29 @@ export const SettingsPage = () => {
       setError(message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveCompanyName = async () => {
+    if (!company || companyNameInput.trim() === company.name) return;
+    if (companyNameInput.trim().length < 2) {
+      setCompanyNameError('Company name must be at least 2 characters.');
+      return;
+    }
+    setIsSavingCompanyName(true);
+    setCompanyNameError(null);
+    setCompanyNameSuccess(false);
+    try {
+      const updatedCompany = await updateCompanyName(companyNameInput.trim());
+      setCompany(updatedCompany);
+      setCompanyNameInput(updatedCompany.name);
+      setCompanyNameSuccess(true);
+      setTimeout(() => setCompanyNameSuccess(false), 3000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update company name';
+      setCompanyNameError(message);
+    } finally {
+      setIsSavingCompanyName(false);
     }
   };
 
@@ -185,7 +215,39 @@ export const SettingsPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Company Name */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-2">
+                  Company Name
+                </label>
+                <p className="text-sm text-slate-600 mb-3">
+                  This name will appear on all generated reports (PDF &amp; Excel).
+                </p>
+                <div className="flex gap-3 items-start">
+                  <input
+                    type="text"
+                    value={companyNameInput}
+                    onChange={(e) => setCompanyNameInput(e.target.value)}
+                    minLength={2}
+                    maxLength={100}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    placeholder="Your Company Name"
+                  />
+                  <Button
+                    onClick={handleSaveCompanyName}
+                    isLoading={isSavingCompanyName}
+                    disabled={!companyNameInput.trim() || companyNameInput.trim() === company?.name}
+                  >
+                    Save
+                  </Button>
+                </div>
+                {companyNameError && <p className="text-sm text-rose-600 mt-2">{companyNameError}</p>}
+                {companyNameSuccess && <p className="text-sm text-emerald-600 mt-2">Company name updated successfully!</p>}
+              </div>
+
+              <hr className="border-slate-200" />
+
               <div>
                 <p className="text-sm text-slate-600 mb-4">
                   Set the base currency for your company. All financial reports and aggregations will use this currency.

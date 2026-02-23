@@ -572,6 +572,13 @@ export const updateCompanyBaseCurrency = (baseCurrency: string) => {
   });
 };
 
+export const updateCompanyName = (name: string) => {
+  return apiFetch<Company>("/api/company/name", {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+};
+
 export const updateUserPreferredCurrency = (preferredCurrency: string | null) => {
   return apiFetch<ApiUser>("/api/users/me/currency", {
     method: "PATCH",

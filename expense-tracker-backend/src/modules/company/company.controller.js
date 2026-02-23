@@ -1,5 +1,5 @@
 ﻿import { z } from "zod";
-import { getCompanyService, updatePlanService, updateBaseCurrencyService } from "./company.service.js";
+import { getCompanyService, updatePlanService, updateBaseCurrencyService, updateCompanyNameService } from "./company.service.js";
 import { getSupportedCurrencies, getExchangeRateWithMetadata } from "../../services/currency/currency.service.js";
 
 const planSchema = z.object({
@@ -47,6 +47,19 @@ export const updateBaseCurrency = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors: error.errors });
     }
     return res.status(400).json({ message: error.message || "Currency update failed" });
+  }
+};
+
+export const updateCompanyName = async (req, res) => {
+  try {
+    const payload = z.object({ name: z.string().min(2).max(100) }).parse(req.body);
+    const company = await updateCompanyNameService(req.user.companyId, payload.name);
+    return res.json(company);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Validation failed", errors: error.errors });
+    }
+    return res.status(400).json({ message: error.message || "Company name update failed" });
   }
 };
 
