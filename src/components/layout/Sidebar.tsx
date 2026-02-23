@@ -37,8 +37,8 @@ export const Sidebar = () => {
   return (
     <aside className="w-64 bg-gradient-to-b from-white/95 via-white/90 to-slate-50/80 backdrop-blur-xl border-r border-slate-200/60 hidden md:flex flex-col fixed inset-y-0 z-30 shadow-[8px_0_36px_rgba(15,23,42,0.08)]">
       <div className="h-16 flex items-center px-6 border-b border-slate-100/70">
-        <div className="flex items-center gap-2.5 text-teal-700">
-          <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-violet-500/30">
             <Hexagon className="w-5 h-5 fill-current" />
           </div>
           <span className="text-lg font-semibold text-slate-900 tracking-tight font-display">DualSpend</span>
@@ -59,7 +59,7 @@ export const Sidebar = () => {
                 cn(
                   "relative flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group",
                   isActive
-                    ? "bg-teal-50/80 text-teal-700 shadow-[0_10px_20px_rgba(15,23,42,0.08)] ring-1 ring-teal-600/10 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-teal-400 before:to-teal-600 before:shadow-[0_0_12px_rgba(14,165,164,0.5)]"
+                    ? "bg-violet-50/80 text-violet-700 shadow-[0_10px_20px_rgba(139,92,246,0.1)] ring-1 ring-violet-600/10 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-1 before:rounded-full before:bg-gradient-to-b before:from-violet-400 before:to-purple-600 before:shadow-[0_0_12px_rgba(139,92,246,0.5)]"
                     : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-900"
                 )
               }
@@ -69,7 +69,7 @@ export const Sidebar = () => {
                   <link.icon
                     className={cn(
                       "w-4 h-4 transition-colors",
-                      isActive ? "text-teal-600" : "text-slate-400 group-hover:text-slate-600"
+                      isActive ? "text-violet-600" : "text-slate-400 group-hover:text-slate-600"
                     )}
                   />
                   {link.name}

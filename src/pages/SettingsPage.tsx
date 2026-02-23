@@ -231,7 +231,7 @@ export const SettingsPage = () => {
                     onChange={(e) => setCompanyNameInput(e.target.value)}
                     minLength={2}
                     maxLength={100}
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 transition-all"
                     placeholder="Your Company Name"
                   />
                   <Button
@@ -259,7 +259,7 @@ export const SettingsPage = () => {
                   <select
                     value={selectedBaseCurrency}
                     onChange={(e) => setSelectedBaseCurrency(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 transition-all"
                   >
                     {currencies.map((currency) => (
                       <option key={currency.code} value={currency.code}>
@@ -305,7 +305,7 @@ export const SettingsPage = () => {
                 <select
                   value={selectedPreferredCurrency || ''}
                   onChange={(e) => setSelectedPreferredCurrency(e.target.value || null)}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 transition-all"
                 >
                   <option value="">Default (Company Base Currency)</option>
                   {currencies.map((currency) => (

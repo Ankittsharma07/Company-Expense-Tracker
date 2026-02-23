@@ -130,11 +130,11 @@ export const Navbar = () => {
     <header className="h-16 bg-gradient-to-r from-white/85 via-white/75 to-white/65 backdrop-blur-2xl border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-20 transition-all shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 ring-white/60">
       <div className="flex items-center flex-1">
         <div className="relative w-full max-w-md hidden sm:block group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-teal-600 transition-colors" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
           <input
             type="text"
             placeholder="Search expenses..."
-            className="w-full pl-10 pr-12 py-2 text-sm border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/25 focus:border-teal-500/60 focus:bg-white transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(15,23,42,0.08)]"
+            className="w-full pl-10 pr-12 py-2 text-sm border border-slate-200/70 rounded-xl bg-white/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/25 focus:border-violet-500/60 focus:bg-white transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(15,23,42,0.08)]"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-slate-200/70 bg-slate-50 px-1.5 font-mono text-[10px] font-medium text-slate-500 opacity-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
@@ -179,7 +179,7 @@ export const Navbar = () => {
                       key={notification.id}
                       type="button"
                       onClick={() => handleMarkRead(notification)}
-                      className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${notification.isRead ? 'bg-white' : 'bg-teal-50/60'
+                      className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-b-0 transition-colors ${notification.isRead ? 'bg-white' : 'bg-violet-50/60'
                         } hover:bg-slate-50`}
                     >
                       <p className="text-sm font-semibold text-slate-900">{notification.title}</p>
@@ -209,12 +209,12 @@ export const Navbar = () => {
                 alt={user.name}
                 crossOrigin="anonymous"
                 referrerPolicy="no-referrer"
-                className="w-9 h-9 rounded-full border border-slate-200 object-cover shadow-[0_8px_18px_rgba(15,23,42,0.12)] group-hover:ring-2 group-hover:ring-teal-500/25 transition-all"
+                className="w-9 h-9 rounded-full border border-slate-200 object-cover shadow-[0_8px_18px_rgba(15,23,42,0.12)] group-hover:ring-2 group-hover:ring-violet-500/30 transition-all"
               />
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-violet-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold text-slate-900 leading-none group-hover:text-teal-700 transition-colors">{user.name}</p>
+              <p className="text-sm font-semibold text-slate-900 leading-none group-hover:text-violet-700 transition-colors">{user.name}</p>
               <div className="mt-1">
                 <RoleBadge role={user.role} />
               </div>

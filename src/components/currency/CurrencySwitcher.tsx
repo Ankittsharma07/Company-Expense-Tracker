@@ -80,7 +80,7 @@ export const CurrencySwitcher: React.FC = () => {
                   onClick={() => handleCurrencyChange(currency.code)}
                   disabled={isLoading}
                   className={`w-full px-4 py-2 text-left hover:bg-slate-50 transition-colors flex items-center justify-between ${
-                    currency.code === currentCurrency ? 'bg-cyan-50 text-cyan-900' : 'text-slate-700'
+                    currency.code === currentCurrency ? 'bg-violet-50 text-violet-900' : 'text-slate-700'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-3">
@@ -91,7 +91,7 @@ export const CurrencySwitcher: React.FC = () => {
                     </div>
                   </div>
                   {currency.code === currentCurrency && (
-                    <div className="w-2 h-2 bg-cyan-600 rounded-full" />
+                    <div className="w-2 h-2 bg-violet-600 rounded-full" />
                   )}
                 </button>
               ))}
