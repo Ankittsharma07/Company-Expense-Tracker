@@ -48,9 +48,9 @@ This repository contains a production-ready SaaS Expense Tracker with:
 **High-level system diagram**
 ```
 ┌───────────────┐      HTTPS      ┌─────────────────────┐
-│   Frontend    │  ───────────▶   │   Node/Express API   │
-│  React (Vite) │                │  Auth + Business     │
-└───────────────┘                 │  Logic + Prisma      │
+│   Frontend    │  ────────────▶ │   Node/Express API  │
+│  React (Vite) │                 │  Auth + Business    │
+└───────────────┘                 │  Logic + Prisma     │
         ▲                         └──────────┬──────────┘
         │                                    │
         │                                    │
